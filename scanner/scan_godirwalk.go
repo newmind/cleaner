@@ -2,9 +2,12 @@ package scanner
 
 import (
 	"os"
+	"path/filepath"
+
+	"gitlab.markany.com/argos/cleaner/fileinfo"
 
 	"github.com/karrick/godirwalk"
-	"gitlab.markany.com/argos/cleaner/fileinfo"
+	"github.com/spf13/viper"
 )
 
 func GoDirWalk(root string) ([]string, error) {
@@ -24,11 +27,16 @@ func GoDirWalk(root string) ([]string, error) {
 
 // GoFileWalk root 디렉토리내의 모든 파일을 리턴
 func GoFileWalk(root string) (files []*fileinfo.FileInfo, err error) {
+	deleteHidden := viper.GetBool("delete-hidden")
 	files = make([]*fileinfo.FileInfo, 0, 1000)
 
 	err = godirwalk.Walk(root, &godirwalk.Options{
 		Callback: func(path string, de *godirwalk.Dirent) error {
+			base := filepath.Base(path)
 			if !de.IsDir() {
+				if base[0] == '.' && deleteHidden == false {
+					return nil
+				}
 				fi, err := os.Lstat(path)
 				if err == nil {
 					files = append(files,
@@ -36,6 +44,10 @@ func GoFileWalk(root string) (files []*fileinfo.FileInfo, err error) {
 							Path: path,
 							Time: fi.ModTime(),
 						})
+				}
+			} else if de.IsDir() {
+				if base[0] == '.' && deleteHidden == false {
+					return filepath.SkipDir
 				}
 			}
 			return nil

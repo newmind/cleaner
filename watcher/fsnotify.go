@@ -6,25 +6,13 @@ import (
 	"path/filepath"
 	"sync"
 
+	"gitlab.markany.com/argos/cleaner/excludes"
+	"gitlab.markany.com/argos/cleaner/fileinfo"
+
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
-	"gitlab.markany.com/argos/cleaner/fileinfo"
+	"github.com/spf13/viper"
 )
-
-var (
-	// 스캔, 파일 감지에서 제외할 파일/디렉토리 목록
-	excludes         = map[string]bool{}
-	excludeFromWatch = []string{
-		".fseventsd",
-		".Trashes",
-	}
-)
-
-func init() {
-	for _, e := range excludeFromWatch {
-		excludes[e] = true
-	}
-}
 
 // Watch : root 와 하위디렉토리 내의 파일/디렉토리의 생성 삭제를 감시
 // 파일 생성 notification 만 ch 로 보냄
@@ -47,7 +35,7 @@ func Watch(root string, ch chan fileinfo.FileInfo) error {
 				log.Debugf("EVENT: %s, %s\n", event.Name, event.Op)
 
 				// Check the name if it is excluded map
-				if excludes[event.Name] {
+				if excludes.Excludes[event.Name] {
 					continue
 				}
 
@@ -96,12 +84,18 @@ func Watch(root string, ch chan fileinfo.FileInfo) error {
 }
 
 func watchDirOrAddFile(watcher *fsnotify.Watcher, path string, ch chan fileinfo.FileInfo) {
+	deleteHidden := viper.GetBool("delete-hidden")
+	base := filepath.Base(path)
+
 	err := filepath.Walk(path, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			log.Error(err)
 		}
 		// 하위폴더를 와처에 추가
 		if fi.Mode().IsDir() {
+			if base[0] == '.' && deleteHidden == false {
+				return filepath.SkipDir
+			}
 			err := watcher.Add(path)
 			if err != nil {
 				return filepath.SkipDir
@@ -123,12 +117,17 @@ func watchDirOrAddFile(watcher *fsnotify.Watcher, path string, ch chan fileinfo.
 
 // watchDir, WalkFunc, 와처에 디렉토리 추가
 func watchDir(watcher *fsnotify.Watcher) filepath.WalkFunc {
+	deleteHidden := viper.GetBool("delete-hidden")
 	return func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			log.Error(err)
 		}
+		base := filepath.Base(path)
 		// 하위폴더를 와처에 추가
 		if fi.Mode().IsDir() {
+			if base[0] == '.' && deleteHidden == false {
+				return filepath.SkipDir
+			}
 			err := watcher.Add(path)
 			if err != nil {
 				return filepath.SkipDir

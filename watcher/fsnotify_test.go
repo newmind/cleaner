@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"gitlab.markany.com/argos/cleaner/excludes"
 	"gitlab.markany.com/argos/cleaner/fileinfo"
 
 	log "github.com/sirupsen/logrus"
@@ -70,8 +71,11 @@ func TestWatch(t *testing.T) {
 func TestExcludedDir(t *testing.T) {
 	excludedDir := filepath.Join(root, "excluded")
 
-	// add to excludes
-	excludes[excludedDir] = true
+	// add to Excludes
+	excludes.Excludes[excludedDir] = true
+	defer func() {
+		delete(excludes.Excludes, excludedDir)
+	}()
 
 	ch := make(chan fileinfo.FileInfo, 100)
 

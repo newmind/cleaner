@@ -22,28 +22,36 @@ var appName = "cleaner"
 
 var (
 	// configuration
-	deleteEmtpyDir bool
+	deleteEmptyDir bool
+	deleteHidden   bool // . 파일/디렉토리 삭제할지, (default : false)
 	interval       string
 	freePercent    int // 여유공간 몇퍼센트 유지할지
+	debug          bool
 )
 
 func init() {
+	// Read command line flags
+	flag.BoolVar(&deleteEmptyDir, "delete-empty-dir", true, "Delete if dir is sempty")
+	flag.BoolVar(&deleteHidden, "delete-hidden", false, "Delete .(dot) files or dirs")
+	flag.StringVar(&interval, "interval", "100ms", "Deletor poll interval")
+	flag.IntVar(&freePercent, "free-percent", 10, "Keep free percent")
+	flag.BoolVar(&debug, "debug", false, "Debug mode")
+
 	log.SetFormatter(&log.TextFormatter{
 		TimestampFormat: "2006-01-02T15:04:05.000",
 		FullTimestamp:   true,
 	})
-	log.SetLevel(log.DebugLevel)
+	if debug {
+		log.SetLevel(log.DebugLevel)
+	}
 
-	// Read command line flags
-	flag.BoolVar(&deleteEmtpyDir, "delete-empty-dir", true, "Delete if dir is sempty")
-	flag.StringVar(&interval, "interval", "100ms", "Deletor poll interval")
-	flag.IntVar(&freePercent, "free-percent", 10, "Keep free percent")
 }
 
 func loadConfig() {
 	dirs := flag.Args()
 
-	viper.Set("delete-empty-dir", deleteEmtpyDir)
+	viper.Set("delete-empty-dir", deleteEmptyDir)
+	viper.Set("delete-hidden", deleteHidden)
 
 	// Parse the interval string into a time.Duration.
 	parsedInterval, err := time.ParseDuration(interval)
@@ -53,6 +61,7 @@ func loadConfig() {
 	}
 	viper.Set("interval", parsedInterval)
 	viper.Set("free-percent", freePercent)
+	viper.Set("debug", debug)
 
 	if len(dirs) == 0 {
 		fmt.Printf("Usage : ./%s [options] path ...  \n", appName)
@@ -137,8 +146,10 @@ func freeUpSpace(scannedFiles []*fileinfo.FileInfo, qFilesWatched *list.List, mu
 				if fi, err := os.Lstat(last.Path); err == nil {
 					deletedSize += fi.Size()
 					os.Remove(last.Path)
-					// try removing dir if empty
-					os.Remove(filepath.Dir(last.Path))
+					if deleteEmptyDir {
+						// try removing dir if empty
+						os.Remove(filepath.Dir(last.Path))
+					}
 				}
 				// remove from slice
 				scannedFiles = scannedFiles[:len(scannedFiles)-1]
@@ -149,8 +160,10 @@ func freeUpSpace(scannedFiles []*fileinfo.FileInfo, qFilesWatched *list.List, mu
 					if fi, err := os.Lstat(path); err == nil {
 						deletedSize += fi.Size()
 						os.Remove(path)
-						// try removing dir if empty
-						os.Remove(filepath.Dir(path))
+						if deleteEmptyDir {
+							// try removing dir if empty
+							os.Remove(filepath.Dir(path))
+						}
 					}
 					qFilesWatched.Remove(elem)
 				}
