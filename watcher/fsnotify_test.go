@@ -72,9 +72,9 @@ func TestExcludedDir(t *testing.T) {
 	excludedDir := filepath.Join(root, "excluded")
 
 	// add to Excludes
-	excludes.Excludes[excludedDir] = true
+	excludes.Add(excludedDir)
 	defer func() {
-		delete(excludes.Excludes, excludedDir)
+		excludes.Remove(excludedDir)
 	}()
 
 	ch := make(chan fileinfo.FileInfo, 100)

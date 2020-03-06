@@ -35,7 +35,7 @@ func Watch(root string, ch chan fileinfo.FileInfo) error {
 				log.Debugf("EVENT: %s, %s\n", event.Name, event.Op)
 
 				// Check the name if it is excluded map
-				if excludes.Excludes[event.Name] {
+				if excludes.Contains(event.Name) {
 					continue
 				}
 
