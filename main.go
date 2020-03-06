@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -38,15 +40,6 @@ func init() {
 	flag.IntVar(&freePercent, "free-percent", 10, "Keep free percent")
 	flag.BoolVar(&dryRun, "dry-run", true, "Dry run, doesn't remove files if true")
 	flag.BoolVar(&debug, "debug", true, "Debug mode")
-
-	log.SetFormatter(&log.TextFormatter{
-		TimestampFormat: "2006-01-02T15:04:05.000",
-		FullTimestamp:   true,
-	})
-	if debug {
-		log.SetLevel(log.DebugLevel)
-	}
-
 }
 
 func loadConfig() {
@@ -94,9 +87,31 @@ func loadConfig() {
 	viper.Set("dirs", dirs)
 }
 
+func initLogger() {
+	formatter := &log.TextFormatter{
+		TimestampFormat: "2006-01-02T15:04:05.000",
+		FullTimestamp:   true,
+	}
+	log.SetFormatter(formatter)
+	if debug {
+		log.SetReportCaller(true)
+		formatter.CallerPrettyfier = func(f *runtime.Frame) (string, string) {
+			// shorten filename and remove func-name
+			return "", fmt.Sprintf("%s:%d", formatFilePath(f.File), f.Line)
+		}
+		log.SetLevel(log.DebugLevel)
+	}
+}
+
+func formatFilePath(path string) string {
+	arr := strings.Split(path, "/")
+	return arr[len(arr)-1]
+}
+
 func main() {
 	flag.Parse()
 	loadConfig()
+	initLogger()
 
 	log.Infof("Starting %v ...\n", appName)
 
