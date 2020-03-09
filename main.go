@@ -45,6 +45,7 @@ func init() {
 func loadConfig() {
 	dirs := flag.Args()
 
+	viper.AutomaticEnv()
 	viper.Set("delete-empty-dir", deleteEmptyDir)
 	viper.Set("delete-hidden", deleteHidden)
 
@@ -84,6 +85,9 @@ func loadConfig() {
 		}
 	}
 
+	for i, d := range dirs {
+		dirs[i] = filepath.Clean(d)
+	}
 	viper.Set("dirs", dirs)
 }
 
@@ -93,7 +97,7 @@ func initLogger() {
 		FullTimestamp:   true,
 	}
 	log.SetFormatter(formatter)
-	if debug {
+	if viper.GetBool("debug") {
 		log.SetReportCaller(true)
 		formatter.CallerPrettyfier = func(f *runtime.Frame) (string, string) {
 			// shorten filename and remove func-name
@@ -113,7 +117,7 @@ func main() {
 	loadConfig()
 	initLogger()
 
-	log.Infof("Starting %v ...\n", appName)
+	log.Infof("Starting %v (debug=%v, dry-run=%v)...\n", appName, debug, dryRun)
 
 	//
 	// 파일 감지를 먼저 시작하고, 스캔을 나중에 함. 파일이 중복되어도 큰 문제 없음
@@ -125,7 +129,7 @@ func main() {
 	log.Info("Notification handler starting ...")
 	qFilesWatched := list.New()
 	mutexQ := sync.Mutex{}
-	chWatcher := make(chan fileinfo.FileInfo, 200)
+	chWatcher := make(chan fileinfo.FileInfo, 1000)
 
 	// 2. 파일와처 채널 리시버
 	go watcher.HandleFileCreation(chWatcher, qFilesWatched, &mutexQ)
@@ -141,6 +145,7 @@ func main() {
 	// 4. 디렉토리 스캔
 	log.Infof("File creation handler starting [%s] ...", viper.GetStringSlice("dirs"))
 	scannedFiles := scanner.ScanAllFiles(viper.GetStringSlice("dirs"))
+	log.Infof("  scanned %v files\n", len(scannedFiles))
 
 	// 5. 여유 공간 확보를 위해서, 오래된 파일부터 삭제
 	usage, err := disk.Usage(viper.GetStringSlice("dirs")[0])

@@ -143,7 +143,7 @@ func HandleFileCreation(chWatcher <-chan fileinfo.FileInfo, qFilesWatched *list.
 		select {
 		// watch for fileInfo
 		case fi := <-chWatcher:
-			log.Infof("%#v", fi)
+			log.Infof("%s", fi)
 			// TODO: 성능문제 생기면 priorityQueue 에 저장
 			mutexQ.Lock()
 			qFilesWatched.PushBack(&fi)
