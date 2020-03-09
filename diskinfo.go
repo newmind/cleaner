@@ -21,7 +21,7 @@ func DiskUsage(path string) (disk DiskStatus) {
 	if err != nil {
 		return
 	}
-	log.Infof("%s %s %s\n", unescapeFstab(path), intToString(fs.Mntonname[:]), intToString(fs.Mntfromname[:]))
+	// log.Infof("%s %s %s\n", unescapeFstab(path), intToString(fs.Mntonname[:]), intToString(fs.Mntfromname[:]))
 	log.Infof("%s %#v\n", path, fs)
 	disk.All = fs.Blocks * uint64(fs.Bsize)
 	disk.Avail = fs.Bavail * uint64(fs.Bsize)
