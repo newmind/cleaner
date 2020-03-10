@@ -90,7 +90,9 @@ func Worker(node int, wg *sync.WaitGroup, done <-chan time.Time) {
 			i++
 
 			f.Seek(int64(viper.GetInt64("size")-1), io.SeekCurrent)
-			f.Write([]byte{0x1})
+			if _, err := f.Write([]byte{0x1}); err != nil {
+				log.Error(err)
+			}
 			f.Close()
 
 			log.Debugf("[%d] %s", node, f.Name())
