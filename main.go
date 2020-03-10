@@ -136,14 +136,14 @@ func main() {
 
 	// 3. 디렉토리의 새로운 파일 감시
 	for _, dir := range viper.GetStringSlice("dirs") {
-		log.Infof("Watching directory \"%v\" ...", dir)
+		log.Infof("Watching a directory \"%v\" ...", dir)
 		if err := watcher.Watch(dir, chWatcher); err != nil {
 			log.Panic(err)
 		}
 	}
 
 	// 4. 디렉토리 스캔
-	log.Infof("File creation handler starting [%s] ...", viper.GetStringSlice("dirs"))
+	log.Infof("Scanning directories [%s] ...", viper.GetStringSlice("dirs"))
 	scannedFiles := scanner.ScanAllFiles(viper.GetStringSlice("dirs"))
 	log.Infof("  scanned %v files\n", len(scannedFiles))
 
