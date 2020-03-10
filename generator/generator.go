@@ -65,38 +65,37 @@ func main() {
 	wg.Wait()
 }
 
-func Worker(index int, wg *sync.WaitGroup, done <-chan time.Time) {
+func Worker(node int, wg *sync.WaitGroup, done <-chan time.Time) {
 	defer wg.Done()
-	log.Debugf("Worker[%d] started", index)
+	log.Debugf("Worker[%d] started", node)
 
 	dataDir, err := ioutil.TempDir(viper.GetString("path"),
-		"data"+strconv.Itoa(index)+"-*")
+		"data"+strconv.Itoa(node)+"-*")
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
 	intervalChan := time.Tick(viper.GetDuration("interval"))
+	i := 0
 
 	for {
 		select {
 		case <-intervalChan:
-			f, err := ioutil.TempFile(dataDir, "file-*")
+			f, err := ioutil.TempFile(dataDir, "file"+strconv.Itoa(i)+"-*")
 			if err != nil {
 				log.Error(err)
 				return
 			}
-			//defer os.Remove(f.Name())
+			i++
 
 			f.Seek(int64(viper.GetInt64("size")-1), io.SeekCurrent)
 			f.Write([]byte{0x1})
 			f.Close()
 
-			//fi, err := os.Stat(f.Name())
-			//log.Info(fi.Size())
-			log.Debugf("[%d] %s", index, f.Name())
+			log.Debugf("[%d] %s", node, f.Name())
 		case <-done:
-			log.Debugf("Worker[%d] done", index)
+			log.Debugf("Worker[%d] done", node)
 			return
 		}
 	}
