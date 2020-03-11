@@ -244,7 +244,7 @@ func freeUpSpace(scannedFiles []*fileinfo.FileInfo, qFilesWatched *list.List, mu
 			}
 
 			// 다시 계산
-			usedPercent = float64((usage.Used - uint64(deletedSize)) / total)
+			usedPercent = (float64(usage.Used-uint64(deletedSize)) / float64(total)) * 100.0
 		}
 
 		time.Sleep(pollingInterval)
