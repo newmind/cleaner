@@ -5,10 +5,13 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
+	"runtime/pprof"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"gitlab.markany.com/argos/cleaner/fileinfo"
@@ -30,6 +33,8 @@ var (
 	freePercent    int // 여유공간 몇퍼센트 유지할지
 	dryRun         bool
 	debug          bool
+
+	cpuprofile string
 )
 
 func init() {
@@ -40,6 +45,7 @@ func init() {
 	flag.IntVar(&freePercent, "free-percent", 10, "Keep free percent")
 	flag.BoolVar(&dryRun, "dry-run", true, "Dry run, doesn't remove files if true")
 	flag.BoolVar(&debug, "debug", true, "Debug mode")
+	flag.StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
 }
 
 func loadConfig() {
@@ -117,6 +123,15 @@ func main() {
 	loadConfig()
 	initLogger()
 
+	if cpuprofile != "" {
+		f, err := os.Create(cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
+
 	log.Infof("Starting %v (debug=%v, dry-run=%v)...\n", appName, debug, dryRun)
 
 	//
@@ -143,8 +158,9 @@ func main() {
 	}
 
 	// 4. 디렉토리 스캔
+	var scannedFiles []*fileinfo.FileInfo
 	log.Infof("Scanning directories [%s] ...", viper.GetStringSlice("dirs"))
-	scannedFiles := scanner.ScanAllFiles(viper.GetStringSlice("dirs"))
+	scannedFiles = scanner.ScanAllFiles(viper.GetStringSlice("dirs"))
 	log.Infof("  scanned %v files\n", len(scannedFiles))
 
 	// 5. 여유 공간 확보를 위해서, 오래된 파일부터 삭제
@@ -157,6 +173,13 @@ func main() {
 	go freeUpSpace(scannedFiles, qFilesWatched, mutexQ)
 
 	done := make(chan bool)
+	handleSigterm(func() {
+		log.Info("Exit")
+		if cpuprofile != "" {
+			pprof.StopCPUProfile()
+		}
+		done <- true
+	})
 	<-done
 }
 
@@ -234,4 +257,16 @@ func remove(path string) error {
 		return nil
 	}
 	return os.Remove(path)
+}
+
+// Handles Ctrl+C or most other means of "controlled" shutdown gracefully. Invokes the supplied func before exiting.
+func handleSigterm(handleExit func()) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, syscall.SIGTERM)
+	go func() {
+		<-c
+		handleExit()
+		os.Exit(1)
+	}()
 }
