@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"runtime/pprof"
 	"strconv"
 	"sync"
 	"syscall"
@@ -17,6 +18,8 @@ import (
 
 const appName = "generator"
 
+var cpuprofile string
+
 // Init function, runs before main()
 func init() {
 	// Read command line flags
@@ -25,6 +28,7 @@ func init() {
 	interval := flag.String("interval", "1s", `Interval for file creation("ns", "us" (or "µs"), "ms", "s", "m", "h")`)
 	size := flag.Int64("size", 1024, "Size of file to create in bytes")
 	path := flag.String("path", "", "[Required] Path where to create files")
+	flag.StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
 
 	flag.Parse()
 
@@ -52,10 +56,25 @@ func init() {
 func main() {
 	log.Infof("Starting %v...\n", appName)
 
+	if cpuprofile != "" {
+		f, err := os.Create(cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
+
 	os.Mkdir(viper.GetString("path"), os.ModePerm)
 
-	wg := sync.WaitGroup{}
+	handleSigterm(func() {
+		log.Info("Exit")
+		if cpuprofile != "" {
+			pprof.StopCPUProfile()
+		}
+	})
 
+	wg := sync.WaitGroup{}
 	for i := 0; i < viper.GetInt("users"); i++ {
 		wg.Add(1)
 		durationChan := time.After(time.Duration(viper.GetInt("duration")) * time.Second)

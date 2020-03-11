@@ -8,7 +8,19 @@
 
 ## fsnotify 주의점
 
-mkdir -p로 만든 하위폴더는 감지 안됨
+mkdir -p로 만든 하위폴더는 감지 안되는 문제가 있었음.(감지 목록에 추가되기 전에 하위디렉토리가 만들어져서 발생한 문제)
+
+## Build and Run
+```sh
+make build
+docker run --rm -v /Volumes/RAMDisk:/data  cleaner  -dry-run=false -debug=true /data
+```
+
+## 테스트 파일 generator 실행
+```sh
+cd generator
+go run . -size=1024 -interval=100ms -duration=300 -users=50 -path=/Volumes/RAMDisk
+```
 
 ## Benchmark scan speed
 
