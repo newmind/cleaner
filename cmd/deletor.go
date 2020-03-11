@@ -9,6 +9,7 @@ import (
 	"gitlab.markany.com/argos/cleaner/fileinfo"
 	"gitlab.markany.com/argos/cleaner/scanner"
 
+	"github.com/shirou/gopsutil/disk"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -63,26 +64,42 @@ func main() {
 	scannedFiles = scanner.ScanAllFiles([]string{path})
 	log.Infof("  scanned %v files\n", len(scannedFiles))
 
-	var deletedSize int64
+	usage, err := disk.Usage(path)
+	if err != nil {
+		log.Fatal(err)
+		panic(err)
+	}
 
-	for len(scannedFiles) > 0 {
-		last := scannedFiles[len(scannedFiles)-1]
-		if fi, err := os.Lstat(last.Path); err == nil {
-			deletedSize += fi.Size()
-			if err := remove(last.Path); err != nil {
-				log.Error(err)
-			}
-			log.Debug("Deleted :", last.Path)
-			if deleteEmptyDir {
-				// try removing dir if empty
-				err := remove(filepath.Dir(last.Path))
-				if err == nil {
-					log.Debug("Deleted[dir] :", filepath.Dir(last.Path))
+	total := usage.Used + usage.Free
+	deletedSize := int64(0)
+	usedPercent := usage.UsedPercent
+	freePercent := 10
+	for usedPercent+float64(freePercent) >= 100 {
+		if len(scannedFiles) > 0 {
+			last := scannedFiles[len(scannedFiles)-1]
+			if fi, err := os.Lstat(last.Path); err == nil {
+				deletedSize += fi.Size()
+				if err := remove(last.Path); err != nil {
+					log.Error(err)
+				}
+				log.Debug("Deleted :", last.Path)
+				if deleteEmptyDir {
+					// try removing dir if empty
+					err := remove(filepath.Dir(last.Path))
+					if err == nil {
+						log.Debug("Deleted[dir] :", filepath.Dir(last.Path))
+					}
 				}
 			}
+			// remove from slice
+			scannedFiles = scannedFiles[:len(scannedFiles)-1]
+		} else {
+			break
 		}
-		// remove from slice
-		scannedFiles = scannedFiles[:len(scannedFiles)-1]
+
+		// 다시 계산
+		usedPercent = (float64(usage.Used-uint64(deletedSize)) / float64(total)) * 100.0
+		//log.Debugf("%v = (%v - %v) / %v\n", usedPercent, usage.Used, deletedSize, total)
 	}
 	log.Infof("Total size deleted %d", deletedSize)
 
