@@ -2,11 +2,10 @@ package main
 
 import (
 	"flag"
-	"github.com/spf13/viper"
-	"gitlab.markany.com/argos/cleaner/fileinfo"
 	"os"
 	"runtime/pprof"
 
+	"gitlab.markany.com/argos/cleaner/fileinfo"
 	"gitlab.markany.com/argos/cleaner/scanner"
 
 	log "github.com/sirupsen/logrus"

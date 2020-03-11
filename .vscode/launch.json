@@ -27,9 +27,9 @@
       "env": {},
       "args": [
         "-debug=true",
-        "-dry-run=false",
-        // "/Volumes/RAMDisk",
-        "./test",
+        "-dry-run=true",
+        "/Volumes/RAMDisk",
+        // "./test",
       ]
     }
   ]

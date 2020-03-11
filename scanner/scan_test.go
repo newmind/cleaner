@@ -8,9 +8,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var root string = "../test"
+//var root string = "../test"
 
-// var root string = "/Volumes/RAMDisk"
+var root string = "/Volumes/RAMDisk"
 
 func Test_visit(t *testing.T) {
 	var files []string
