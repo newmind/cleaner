@@ -13,7 +13,7 @@ mkdir -p로 만든 하위폴더는 감지 안되는 문제가 있었음.(감지 
 ## Build and Run
 ```sh
 make build
-docker run --rm -v /Volumes/RAMDisk:/data  cleaner  -dry-run=false -debug=true /data
+docker run --rm -v /Volumes/RAMDisk:/data  cleaner  --dry-run=false --debug=true --paths=/data
 ```
 
 ## 테스트 파일 generator 실행
