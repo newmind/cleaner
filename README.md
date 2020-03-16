@@ -18,7 +18,7 @@ docker run --rm -v /Volumes/RAMDisk:/data  cleaner  -dry-run=false -debug=true /
 
 ## 테스트 파일 generator 실행
 ```sh
-cd generator
+cd util/generator
 go run . -size=1024 -interval=100ms -duration=300 -users=50 -path=/Volumes/RAMDisk
 ```
 
