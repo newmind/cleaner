@@ -7,4 +7,4 @@ build:
 	docker build -t cleaner .
 
 run:
-	docker run --rm -v /Volumes/RAMDisk:/data cleaner -debug=true /data
+	docker run --rm -v /Volumes/RAMDisk:/data cleaner --debug=true --paths=/data

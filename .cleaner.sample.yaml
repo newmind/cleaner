@@ -1,0 +1,13 @@
+paths:
+  - ./test
+  - /data
+delete-empty-dir: true
+delete-hidden: false
+interval: 100ms
+free-percent: 10
+dry-run: true
+debug: true
+db:
+  db_host: 192.168.6.190
+  db_port: 6868
+cpuprofile: ''
