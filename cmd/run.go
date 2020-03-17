@@ -67,12 +67,12 @@ func init() {
 	// is called directly, e.g.:
 	// runCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	runCmd.Flags().StringSliceVar(&paths, "paths", []string{}, "paths to watch and clean (required)")
-	runCmd.Flags().BoolVar(&deleteEmptyDir, "deleteEmptyDir", true, "delete empty dir (default is true)")
-	runCmd.Flags().BoolVar(&deleteHidden, "deleteHidden", false, "delete .(dot) files or dirs (default is false)")
-	runCmd.Flags().StringVar(&interval, "interval", "100ms", "poll interval to check free-space (default is 100ms)")
-	runCmd.Flags().IntVar(&freePercent, "freePercent", 10, "Keep free percent (default is 10)")
-	runCmd.Flags().BoolVar(&dryRun, "dryRun", true, "dry run (default is true)")
-	runCmd.Flags().BoolVar(&debug, "debug", true, "use debug logging mode (default is true)")
+	runCmd.Flags().BoolVar(&deleteEmptyDir, "deleteEmptyDir", true, "delete empty dir")
+	runCmd.Flags().BoolVar(&deleteHidden, "deleteHidden", false, "delete .(dot) files or dirs")
+	runCmd.Flags().StringVar(&interval, "interval", "100ms", "poll interval to check free-space")
+	runCmd.Flags().IntVar(&freePercent, "freePercent", 10, "Keep free percent")
+	runCmd.Flags().BoolVar(&dryRun, "dryRun", true, "dry run")
+	runCmd.Flags().BoolVar(&debug, "debug", true, "use debug logging mode")
 	runCmd.Flags().StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
 }
 

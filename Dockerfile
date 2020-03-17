@@ -27,4 +27,4 @@ COPY cleaner-linux-amd64 .
 
 RUN mkdir /data
 ENTRYPOINT ["./cleaner-linux-amd64"]
-CMD ["/data"]
+CMD ["--paths=/data"]
