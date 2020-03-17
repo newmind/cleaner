@@ -1,0 +1,10 @@
+*.md
+*.log
+*.txt
+*.prof
+.git
+.github
+.idea
+.vscode
+/test
+Dockerfile
