@@ -145,7 +145,6 @@ func HandleFileCreation(chWatcher <-chan fileinfo.FileInfo, qFilesWatched *list.
 		// watch for fileInfo
 		case fi := <-chWatcher:
 			//log.Infof("%s", fi)
-			// TODO: 성능문제 생기면 priorityQueue 에 저장
 			if len(chWatcher) > 0 && len(chWatcher)%5 == 0 {
 				log.Warn("event len = ", len(chWatcher))
 			}

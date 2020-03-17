@@ -163,9 +163,6 @@ func TestMkdirAll(t *testing.T) {
 	os.MkdirAll(tmpdir, os.ModePerm)
 	defer os.RemoveAll(filepath.Join(root, "t"))
 
-	//TODO: sleep 없이 하위 디렉토리에 대한 이벤트 감지 할수 있어야 함
-	//time.Sleep(1 * time.Millisecond)
-
 	// test to create a file
 	f, err := ioutil.TempFile(tmpdir, "test*")
 	if err != nil {
