@@ -17,7 +17,7 @@ func init() {
 			fmt.Println("Error Getting rlimit ", err)
 			return //os.Exit(1)
 		}
-		fmt.Println("Current rLimit:", rLimit)
+		//fmt.Println("Current rLimit:", rLimit)
 
 		rLimit.Max = 900000
 		rLimit.Cur = 900000
