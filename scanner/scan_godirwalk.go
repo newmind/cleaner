@@ -27,7 +27,7 @@ func GoDirWalk(root string) ([]string, error) {
 
 // GoFileWalk root 디렉토리내의 모든 파일을 리턴
 func GoFileWalk(root string) (files []*fileinfo.FileInfo, err error) {
-	deleteHidden := viper.GetBool("delete-hidden")
+	deleteHidden := viper.GetBool("deleteHidden")
 	files = make([]*fileinfo.FileInfo, 0, 1000)
 
 	err = godirwalk.Walk(root, &godirwalk.Options{

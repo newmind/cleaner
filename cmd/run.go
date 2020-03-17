@@ -67,13 +67,12 @@ func init() {
 	// is called directly, e.g.:
 	// runCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	runCmd.Flags().StringSliceVar(&paths, "paths", []string{}, "paths to watch and clean (required)")
-	//runCmd.MarkFlagRequired("paths")
-	runCmd.Flags().BoolVar(&deleteEmptyDir, "delete-empty-dir", true, "Delete if dir is empty (default is true)")
-	runCmd.Flags().BoolVar(&deleteHidden, "delete-hidden", false, "Delete .(dot) files or dirs (default is false)")
-	runCmd.Flags().StringVar(&interval, "interval", "100ms", "Deletor poll interval (default is 100ms)")
-	runCmd.Flags().IntVar(&freePercent, "free-percent", 10, "Keep free percent (default is 10)")
-	runCmd.Flags().BoolVar(&dryRun, "dry-run", true, "Dry run, doesn't remove files if true (default is true)")
-	runCmd.Flags().BoolVar(&debug, "debug", true, "Debug mode (default is true)")
+	runCmd.Flags().BoolVar(&deleteEmptyDir, "deleteEmptyDir", true, "delete empty dir (default is true)")
+	runCmd.Flags().BoolVar(&deleteHidden, "deleteHidden", false, "delete .(dot) files or dirs (default is false)")
+	runCmd.Flags().StringVar(&interval, "interval", "100ms", "poll interval to check free-space (default is 100ms)")
+	runCmd.Flags().IntVar(&freePercent, "freePercent", 10, "Keep free percent (default is 10)")
+	runCmd.Flags().BoolVar(&dryRun, "dryRun", true, "dry run (default is true)")
+	runCmd.Flags().BoolVar(&debug, "debug", true, "use debug logging mode (default is true)")
 	runCmd.Flags().StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
 }
 
@@ -87,7 +86,6 @@ func loadConfig() {
 	}
 	viper.Set("interval", parsedInterval)
 
-	viper.RegisterAlias("paths", "dirs")
 	dirs := viper.GetStringSlice("paths")
 
 	if len(dirs) == 0 {
@@ -157,7 +155,7 @@ func run() {
 		defer pprof.StopCPUProfile()
 	}
 
-	log.Infof("Starting %v (debug=%v, dry-run=%v)...\n", appName, debug, dryRun)
+	log.Infof("Starting %v (debug=%v, dryRun=%v)...\n", appName, debug, dryRun)
 
 	//
 	// 파일 감지를 먼저 시작하고, 스캔을 나중에 함. 파일이 중복되어도 큰 문제 없음
@@ -175,7 +173,7 @@ func run() {
 	go watcher.HandleFileCreation(chWatcher, qFilesWatched, &mutexQ)
 
 	// 3. 디렉토리의 새로운 파일 감시
-	for _, dir := range viper.GetStringSlice("dirs") {
+	for _, dir := range viper.GetStringSlice("paths") {
 		log.Infof("Watching a directory \"%v\" ...", dir)
 		if err := watcher.Watch(dir, chWatcher); err != nil {
 			log.Panic(err)
@@ -184,12 +182,12 @@ func run() {
 
 	// 4. 디렉토리 스캔
 	var scannedFiles []*fileinfo.FileInfo
-	log.Infof("Scanning directories [%s] ...", viper.GetStringSlice("dirs"))
-	scannedFiles = scanner.ScanAllFiles(viper.GetStringSlice("dirs"))
+	log.Infof("Scanning directories [%s] ...", viper.GetStringSlice("paths"))
+	scannedFiles = scanner.ScanAllFiles(viper.GetStringSlice("paths"))
 	log.Infof("  scanned %v files\n", len(scannedFiles))
 
 	// 5. 여유 공간 확보를 위해서, 오래된 파일부터 삭제
-	usage, err := disk.Usage(viper.GetStringSlice("dirs")[0])
+	usage, err := disk.Usage(viper.GetStringSlice("paths")[0])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -210,8 +208,8 @@ func run() {
 
 func freeUpSpace(scannedFiles []*fileinfo.FileInfo, qFilesWatched *list.List, mutexQ sync.Mutex) {
 	pollingInterval := viper.GetDuration("interval")
-	dirs := viper.GetStringSlice("dirs")
-	freePercent := viper.GetInt("free-percent")
+	dirs := viper.GetStringSlice("paths")
+	freePercent := viper.GetInt("freePercent")
 
 	for {
 		//TODO: disk 별로 여유공간 유지해야함
@@ -277,7 +275,7 @@ func freeUpSpace(scannedFiles []*fileinfo.FileInfo, qFilesWatched *list.List, mu
 }
 
 func remove(path string) error {
-	dryRun := viper.GetBool("dry-run")
+	dryRun := viper.GetBool("dryRun")
 	if dryRun {
 		return nil
 	}

@@ -26,9 +26,9 @@ var (
 
 func init() {
 	flag.StringVar(&path, "path", "", "Path to delete")
-	flag.BoolVar(&deleteEmptyDir, "delete-empty-dir", true, "Delete if dir is empty")
+	flag.BoolVar(&deleteEmptyDir, "deleteEmptyDir", true, "Delete if dir is empty")
 	flag.BoolVar(&lstat, "lstat", true, "call lstat() every remove")
-	flag.BoolVar(&dryRun, "dry-run", true, "Dry run, doesn't remove files if true")
+	flag.BoolVar(&dryRun, "dryRun", true, "Dry run, doesn't remove files if true")
 	flag.StringVar(&cpuprofile, "cpuprofile", "", "CPU profile")
 	flag.Parse()
 
@@ -107,7 +107,7 @@ func main() {
 }
 
 func remove(path string) error {
-	dryRun := viper.GetBool("dry-run")
+	dryRun := viper.GetBool("dryRun")
 	if dryRun {
 		return nil
 	}
