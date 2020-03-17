@@ -42,12 +42,6 @@ var (
 var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "run cleaner",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		viper.BindPFlags(cmd.Flags())
 		run()
@@ -115,6 +109,11 @@ func loadConfig() {
 	}
 
 	for i, d := range dirs {
+		d := filepath.Clean(d)
+		if realD, err := filepath.EvalSymlinks(d); err != nil || realD != d {
+			fmt.Printf("Symbolic link is not supported : %s -> %s \n", d, realD)
+			os.Exit(1)
+		}
 		dirs[i] = filepath.Clean(d)
 	}
 	viper.Set("paths", dirs)
