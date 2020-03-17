@@ -21,3 +21,10 @@ func TestDiskUsage_psutil(t *testing.T) {
 	usage, _ := disk.Usage(root)
 	t.Log(usage)
 }
+
+func TestPartitions(t *testing.T) {
+	pp, _ := disk.Partitions(true)
+	for _, p := range pp {
+		t.Logf(p.String())
+	}
+}
