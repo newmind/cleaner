@@ -84,7 +84,7 @@ func Watch(root string, ch chan fileinfo.FileInfo) error {
 }
 
 func watchDirOrAddFile(watcher *fsnotify.Watcher, path string, ch chan fileinfo.FileInfo) {
-	deleteHidden := viper.GetBool("deleteHidden")
+	deleteHidden := viper.GetBool("delete_hidden")
 	base := filepath.Base(path)
 
 	err := filepath.Walk(path, func(path string, fi os.FileInfo, err error) error {
@@ -117,7 +117,7 @@ func watchDirOrAddFile(watcher *fsnotify.Watcher, path string, ch chan fileinfo.
 
 // watchDir, WalkFunc, 와처에 디렉토리 추가
 func watchDir(watcher *fsnotify.Watcher) filepath.WalkFunc {
-	deleteHidden := viper.GetBool("deleteHidden")
+	deleteHidden := viper.GetBool("delete_hidden")
 	return func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			log.Error(err)

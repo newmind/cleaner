@@ -26,9 +26,9 @@ var (
 
 func init() {
 	flag.StringVar(&path, "path", "", "Path to delete")
-	flag.BoolVar(&deleteEmptyDir, "deleteEmptyDir", true, "Delete if dir is empty")
+	flag.BoolVar(&deleteEmptyDir, "delete_empty_dir", true, "Delete if dir is empty")
 	flag.BoolVar(&lstat, "lstat", true, "call lstat() every remove")
-	flag.BoolVar(&dryRun, "dryRun", true, "Dry run, doesn't remove files if true")
+	flag.BoolVar(&dryRun, "dry_run", true, "Dry run, doesn't remove files if true")
 	flag.StringVar(&cpuprofile, "cpuprofile", "", "CPU profile")
 	flag.Parse()
 
@@ -37,7 +37,7 @@ func init() {
 		os.Exit(1)
 	}
 
-	viper.Set("dryRun", dryRun)
+	viper.Set("dry_run", dryRun)
 
 	formatter := &log.TextFormatter{
 		TimestampFormat: "2006-01-02T15:04:05.000",
@@ -107,7 +107,7 @@ func main() {
 }
 
 func remove(path string) error {
-	dryRun := viper.GetBool("dryRun")
+	dryRun := viper.GetBool("dry_run")
 	if dryRun {
 		return nil
 	}

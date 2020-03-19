@@ -61,11 +61,11 @@ func init() {
 	// is called directly, e.g.:
 	// runCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	runCmd.Flags().StringSliceVar(&paths, "paths", []string{}, "paths to watch and clean (required)")
-	runCmd.Flags().BoolVar(&deleteEmptyDir, "deleteEmptyDir", true, "delete empty dir")
-	runCmd.Flags().BoolVar(&deleteHidden, "deleteHidden", false, "delete .(dot) files or dirs")
+	runCmd.Flags().BoolVar(&deleteEmptyDir, "delete_empty_dir", true, "delete empty dir")
+	runCmd.Flags().BoolVar(&deleteHidden, "delete_hidden", false, "delete .(dot) files or dirs")
 	runCmd.Flags().StringVar(&interval, "interval", "100ms", "poll interval to check free-space")
-	runCmd.Flags().IntVar(&freePercent, "freePercent", 10, "Keep free percent")
-	runCmd.Flags().BoolVar(&dryRun, "dryRun", true, "dry run")
+	runCmd.Flags().IntVar(&freePercent, "free_percent", 10, "Keep free percent")
+	runCmd.Flags().BoolVar(&dryRun, "dry_run", true, "dry run")
 	runCmd.Flags().BoolVar(&debug, "debug", true, "use debug logging mode")
 	runCmd.Flags().StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
 }
@@ -208,7 +208,7 @@ func run() {
 func freeUpSpace(scannedFiles []*fileinfo.FileInfo, qFilesWatched *list.List, mutexQ sync.Mutex) {
 	pollingInterval := viper.GetDuration("interval")
 	dirs := viper.GetStringSlice("paths")
-	freePercent := viper.GetInt("freePercent")
+	freePercent := viper.GetInt("free_percent")
 
 	for {
 		//TODO: disk 별로 여유공간 유지해야함
@@ -274,7 +274,7 @@ func freeUpSpace(scannedFiles []*fileinfo.FileInfo, qFilesWatched *list.List, mu
 }
 
 func remove(path string) error {
-	dryRun := viper.GetBool("dryRun")
+	dryRun := viper.GetBool("dry_run")
 	if dryRun {
 		return nil
 	}

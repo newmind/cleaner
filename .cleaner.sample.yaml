@@ -1,11 +1,11 @@
 paths:
   - ./test
   - /data
-deleteEmptyDir: true
-deleteHidden: false
+delete_empty_dir: true
+delete_hidden: false
 interval: 100ms
-freePercent: 10
-dryRun: true
+free_percent: 10
+dry_run: true
 debug: true
 db:
   db_host: 192.168.6.190
