@@ -1,6 +1,6 @@
 paths:
   - ./test
-  - /data
+#  - /data
 delete_empty_dir: true
 delete_hidden: false
 interval: 100ms
@@ -11,3 +11,4 @@ db:
   db_host: 192.168.6.190
   db_port: 6868
 cpuprofile: ''
+server_port: 8089

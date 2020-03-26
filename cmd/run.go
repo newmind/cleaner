@@ -13,6 +13,8 @@ import (
 	"syscall"
 	"time"
 
+	"gitlab.markany.com/argos/cleaner/service"
+
 	"gitlab.markany.com/argos/cleaner/fileinfo"
 	"gitlab.markany.com/argos/cleaner/scanner"
 	"gitlab.markany.com/argos/cleaner/watcher"
@@ -34,6 +36,7 @@ var (
 	dryRun         bool
 	debug          bool
 	paths          []string
+	serverPort     string
 
 	cpuprofile string
 )
@@ -68,6 +71,7 @@ func init() {
 	runCmd.Flags().BoolVar(&dryRun, "dry_run", true, "dry run")
 	runCmd.Flags().BoolVar(&debug, "debug", true, "use debug logging mode")
 	runCmd.Flags().StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
+	runCmd.Flags().StringVar(&serverPort, "server_port", "8089", "http port")
 }
 
 func loadConfig() {
@@ -194,12 +198,15 @@ func run() {
 	log.Info("Free up disk ...")
 	go freeUpSpace(scannedFiles, qFilesWatched, mutexQ)
 
+	go service.StartWebServer(viper.GetString("server_port"))
+
 	done := make(chan bool)
 	handleSigterm(func() {
 		log.Info("Exit")
 		if cpuprofile != "" {
 			pprof.StopCPUProfile()
 		}
+		service.StopWebServer()
 		done <- true
 	})
 	<-done
@@ -289,6 +296,6 @@ func handleSigterm(handleExit func()) {
 	go func() {
 		<-c
 		handleExit()
-		os.Exit(1)
+		// os.Exit(1)
 	}()
 }
