@@ -3,8 +3,11 @@ package service
 import (
 	"context"
 	"net/http"
+	"runtime"
 
+	echoprometheus "github.com/globocom/echo-prometheus"
 	"github.com/labstack/echo/v4"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -15,21 +18,23 @@ var (
 func StartWebServer(port string) {
 	log.Infoln("Starting HTTP service at " + port)
 
-	e = echo.New()
+	e = echo.New() // Enable metrics middleware
 
-	// Enable metrics middleware
-	// "github.com/labstack/echo-contrib/prometheus"
-	//p := prometheus.NewPrometheus("echo", nil)
-	//p.Use(e)
+	if runtime.GOOS != "darwin" {
+		// "github.com/labstack/echo-contrib/prometheus"
+		//p := prometheus.NewPrometheus("echo", nil)
+		//p.Use(e)
 
-	//metrics.CctvConnected.Set(0)
-	//e.Use(echoprometheus.MetricsMiddleware())
-	//e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
-
+		// "github.com/prometheus/client_golang/prometheus/promhttp"
+		// echoprometheus "github.com/globocom/echo-prometheus"
+		//metrics.CctvConnected.Set(0)
+		e.Use(echoprometheus.MetricsMiddleware())
+		e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
+	}
 	//e.GET("/health", echo.WrapHandler(promhttp.Handler()))
 
-	e.GET("/", hello)
-	e.GET("/health", healthCheck)
+	//e.GET("/", hello)
+	//e.GET("/health", healthCheck)
 
 	e.Logger.Fatal(e.Start(":" + port))
 }

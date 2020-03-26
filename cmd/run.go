@@ -3,7 +3,6 @@ package cmd
 import (
 	"container/list"
 	"fmt"
-	"gitlab.markany.com/argos/cleaner/service"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -13,6 +12,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"gitlab.markany.com/argos/cleaner/service"
 
 	"gitlab.markany.com/argos/cleaner/fileinfo"
 	"gitlab.markany.com/argos/cleaner/scanner"
@@ -295,6 +296,6 @@ func handleSigterm(handleExit func()) {
 	go func() {
 		<-c
 		handleExit()
-		os.Exit(1)
+		// os.Exit(1)
 	}()
 }
