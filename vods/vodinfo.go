@@ -140,3 +140,14 @@ func (p *VodInfo) fillDay() {
 func (p *VodInfo) GetYears() []*Year {
 	return p.years
 }
+
+func (p *VodInfo) GetOldest() (found bool, year int, month int, day int) {
+	for _, y := range p.years {
+		for _, m := range y.months {
+			for _, d := range m.days {
+				return true, y.y, m.m, d.d
+			}
+		}
+	}
+	return
+}

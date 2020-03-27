@@ -24,3 +24,12 @@ func TestListAllVODs(t *testing.T) {
 	assert.Equal(t, 2, lastCam.years[0].months[0].m)
 	assert.Equal(t, 17, lastCam.years[0].months[0].days[0].d)
 }
+
+func TestGetOldestVOD(t *testing.T) {
+	list := ListAllVODs(root)
+	found, y, m, d := list[0].GetOldest()
+	t.Log(found, y, m, d)
+	assert.Equal(t, 2020, y)
+	assert.Equal(t, 1, m)
+	assert.Equal(t, 3, d)
+}
