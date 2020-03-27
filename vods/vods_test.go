@@ -1,12 +1,14 @@
 package vods
 
-import "testing"
+import (
+	"testing"
+)
 import "github.com/stretchr/testify/assert"
 
 const root string = "../test/vods"
 
-func TestListCCTV(t *testing.T) {
-	list := ListVODs(root)
+func TestListAllVODs(t *testing.T) {
+	list := ListAllVODs(root)
 	assert.Equal(t, 122, len(list))
 	t.Log(list)
 	//

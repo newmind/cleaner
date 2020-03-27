@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func ListVODs(root string) (list []*VodInfo) {
+func ListAllVODs(root string) (list []*VodInfo) {
 	matches, err := filepath.Glob(filepath.Join(root, "*-0-0"))
 	if err != nil {
 		log.Error(err)
