@@ -1,6 +1,7 @@
 package vods
 
 import (
+	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -57,8 +58,11 @@ func (p *VodInfo) fillYear() {
 	}
 
 	for _, e := range matches {
-		year := atoi(filepath.Base(e), 0)
-		if year != 0 {
+		if !isDir(e) {
+			continue
+		}
+		year := atoi(filepath.Base(e), -1)
+		if year != -1 {
 			p.years = append(p.years, &Year{
 				y:      year,
 				months: []*Month{},
@@ -83,8 +87,11 @@ func (p *VodInfo) fillMonth() {
 		}
 
 		for _, e := range matches {
-			month := atoi(filepath.Base(e), 0)
-			if month != 0 {
+			if !isDir(e) {
+				continue
+			}
+			month := atoi(filepath.Base(e), -1)
+			if month != -1 {
 				year.months = append(year.months, &Month{
 					m:    month,
 					days: []*Day{},
@@ -112,8 +119,11 @@ func (p *VodInfo) fillDay() {
 			}
 
 			for _, e := range matches {
-				day := atoi(filepath.Base(e), 0)
-				if day != 0 {
+				if !isDir(e) {
+					continue
+				}
+				day := atoi(filepath.Base(e), -1)
+				if day != -1 {
 					month.days = append(month.days, &Day{
 						d:     day,
 						hours: nil,
@@ -149,6 +159,9 @@ func ListVODs(root string) (list []*VodInfo) {
 		return
 	}
 	for _, e := range matches {
+		if !isDir(e) {
+			continue
+		}
 		vodInfo := NewVodInfo(e)
 		vodInfo.FillTree()
 
@@ -158,4 +171,12 @@ func ListVODs(root string) (list []*VodInfo) {
 		return list[i].intId < list[j].intId
 	})
 	return
+}
+
+func isDir(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return info.IsDir()
 }
