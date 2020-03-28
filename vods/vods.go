@@ -47,3 +47,23 @@ func atoi(s string, def int) int {
 	}
 	return def
 }
+
+func ListOldestCCTV(list []*VodInfo) (result []*VodInfo) {
+	var (
+		minY = 9999
+		minM = 12 + 1
+		minD = 31 + 1
+	)
+	for _, cctv := range list {
+		found, y, m, d := cctv.GetOldestDay()
+		if found {
+			if y < minY && m < minM && d < minD {
+				result = []*VodInfo{cctv}
+				minY, minM, minD = y, m, d
+			} else if y == minY && m == minM && d == minD {
+				result = append(result, cctv)
+			}
+		}
+	}
+	return
+}

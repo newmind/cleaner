@@ -3,7 +3,7 @@ package scanner
 import (
 	"sort"
 
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"gitlab.markany.com/argos/cleaner/fileinfo"
 )
 
@@ -11,7 +11,7 @@ import (
 func ScanAllFiles(dirs []string) []*fileinfo.FileInfo {
 	var scannedFiles []*fileinfo.FileInfo
 	for _, dir := range dirs {
-		logrus.Infof("Scanning directory %v ...", dir)
+		log.Infof("Scanning directory %v ...", dir)
 		files, err := GoFileWalk(dir)
 		if err == nil {
 			scannedFiles = append(scannedFiles, files...)

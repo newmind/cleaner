@@ -27,9 +27,41 @@ func TestListAllVODs(t *testing.T) {
 
 func TestGetOldestVOD(t *testing.T) {
 	list := ListAllVODs(root)
-	found, y, m, d := list[0].GetOldest()
+	found, y, m, d := list[0].GetOldestDay()
 	t.Log(found, y, m, d)
 	assert.Equal(t, 2020, y)
 	assert.Equal(t, 1, m)
-	assert.Equal(t, 3, d)
+	assert.Equal(t, 13, d)
+}
+
+func TestDeleteOldestVOD(t *testing.T) {
+	list := ListAllVODs(root)
+
+	list[0].DeleteOldestDay(false)
+
+	found, y, m, d := list[0].GetOldestDay()
+	t.Log(found, y, m, d)
+	assert.Equal(t, 2020, y)
+	assert.Equal(t, 1, m)
+	assert.Equal(t, 14, d)
+
+	for d := 14; d <= 31; d++ {
+		list[0].DeleteOldestDay(false)
+	}
+
+	found, y, m, d = list[0].GetOldestDay()
+	t.Log(found, y, m, d)
+	assert.Equal(t, 2020, y)
+	assert.Equal(t, 2, m)
+	assert.Equal(t, 1, d)
+}
+
+func TestListOldestCCTV(t *testing.T) {
+	list := ListAllVODs(root)
+	oldestCCTVs := ListOldestCCTV(list)
+
+	for _, v := range oldestCCTVs {
+		found, y, m, d := v.GetOldestDay()
+		t.Log(v.id, found, y, m, d)
+	}
 }
