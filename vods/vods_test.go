@@ -154,6 +154,41 @@ func TestDeleteOldestVOD(t *testing.T) {
 	assert.Equal(t, list2, list, "should be equal, after reloading")
 }
 
+func TestEmptyRoot(t *testing.T) {
+	os.RemoveAll(root)
+	list := ListAllVODs(root)
+	assert.Len(t, list, 0)
+	assert.NotNil(t, list)
+
+	_ = os.Mkdir(root, os.ModePerm)
+	list = ListAllVODs(root)
+	assert.Len(t, list, 0)
+	assert.NotNil(t, list)
+
+	oldestCCTV := ListOldestCCTV(list)
+	assert.Len(t, oldestCCTV, 0)
+	assert.NotNil(t, oldestCCTV)
+
+	// 비어있는 달,일 체크
+	err, v1 := generateTestVOD(root, "1-0-0", `{"years": 
+		{
+         "2018":{},
+		 "2020":{ "1":[]
+		 	    }
+		}
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v1 != nil {
+		defer v1.deleteLocal()
+	}
+	list = ListAllVODs(root)
+	found, y, m, d := list[0].GetOldestDay()
+	t.Log(found, y, m, d)
+	assert.False(t, found)
+}
+
 func TestEmptyDir(t *testing.T) {
 	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
 		{"2020":{ "1":[],

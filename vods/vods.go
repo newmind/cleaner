@@ -10,6 +10,7 @@ import (
 )
 
 func ListAllVODs(root string) (list []*VodInfo) {
+	list = []*VodInfo{}
 	matches, err := filepath.Glob(filepath.Join(root, "*-0-0"))
 	if err != nil {
 		log.Error(err)
@@ -49,6 +50,7 @@ func atoi(s string, def int) int {
 }
 
 func ListOldestCCTV(list []*VodInfo) (result []*VodInfo) {
+	result = []*VodInfo{}
 	var (
 		minY = 9999
 		minM = 12 + 1
