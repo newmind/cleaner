@@ -129,7 +129,7 @@ func TestDeleteOldestVOD(t *testing.T) {
 	list := ListAllVODs(root)
 
 	// 하루치 삭제
-	list[0].DeleteOldestDay(false)
+	list[0].DeleteOldestDay(true)
 
 	found, y, m, d := list[0].GetOldestDay()
 	t.Log(found, y, m, d)
@@ -139,8 +139,11 @@ func TestDeleteOldestVOD(t *testing.T) {
 
 	// 1d월 14일부터 ~ 31일까지 삭제
 	for d := 14; d <= 31; d++ {
-		list[0].DeleteOldestDay(false)
+		list[0].DeleteOldestDay(true)
 	}
+
+	// reload list from disk
+	list = ListAllVODs(root)
 
 	// 2월 데이터 나와야 함
 	found, y, m, d = list[0].GetOldestDay()
@@ -148,6 +151,106 @@ func TestDeleteOldestVOD(t *testing.T) {
 	assert.Equal(t, 2020, y)
 	assert.Equal(t, 2, m)
 	assert.Equal(t, 1, d)
+}
+
+func TestEmptyDir(t *testing.T) {
+	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
+		{"2020":{ "1":[],
+				  "2":[1,2,3,4,5,6,7,8,9]
+		 	    }
+		}
+	}`)
+	if v1 != nil {
+		defer v1.deleteLocal()
+	}
+
+	list := ListAllVODs(root)
+
+	// 비어있는 폴더는 제외하는지 체크
+	found, y, m, d := list[0].GetOldestDay()
+	t.Log(found, y, m, d)
+	assert.Equal(t, 2020, y)
+	assert.Equal(t, 2, m)
+	assert.Equal(t, 1, d)
+
+	// 비어있는 달,일 체크
+	_, v1 = generateTestVOD(root, "1-0-0", `{"years": 
+		{
+         "2018":{},
+		 "2019":{ "11":[],
+				  "12":[]
+		 	    },
+		 "2020":{ "1":[],
+				  "2":[1,2,3,4,5,6,7,8,9]
+		 	    }
+		}
+	}`)
+	if v1 != nil {
+		defer v1.deleteLocal()
+	}
+	found, y, m, d = list[0].GetOldestDay()
+	t.Log(found, y, m, d)
+	assert.Equal(t, 2020, y)
+	assert.Equal(t, 2, m)
+	assert.Equal(t, 1, d)
+}
+
+func TestMonthChanged(t *testing.T) {
+	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
+		{"2020":{ "1":[31],
+				  "2":[1,2,3,4,5,6,7,8,9]
+		 	    }
+		}
+	}`)
+	if v1 != nil {
+		defer v1.deleteLocal()
+	}
+
+	list := ListAllVODs(root)
+
+	// 하루치 삭제
+	list[0].DeleteOldestDay(true)
+
+	found, y, m, d := list[0].GetOldestDay()
+	t.Log(found, y, m, d)
+	assert.Equal(t, 2020, y)
+	assert.Equal(t, 2, m)
+	assert.Equal(t, 1, d)
+}
+
+func TestYearChanged(t *testing.T) {
+	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
+		{
+		 "2019":{ "11":[],
+				  "12":[31]
+		 	    },
+		 "2020":{ "1":[13],
+				  "2":[1,2,3,4,5,6,7,8,9]
+		 	    }
+		}
+	}`)
+	if v1 != nil {
+		defer v1.deleteLocal()
+	}
+
+	list := ListAllVODs(root)
+
+	// 하루치 삭제
+	list[0].DeleteOldestDay(true)
+
+	found, y, m, d := list[0].GetOldestDay()
+	t.Log(found, y, m, d)
+	assert.Equal(t, 2020, y)
+	assert.Equal(t, 1, m)
+	assert.Equal(t, 13, d)
+
+	// reload
+	list = ListAllVODs(root)
+	found, y, m, d = list[0].GetOldestDay()
+	t.Log(found, y, m, d)
+	assert.Equal(t, 2020, y)
+	assert.Equal(t, 1, m)
+	assert.Equal(t, 13, d)
 }
 
 func TestListOldestCCTV(t *testing.T) {
