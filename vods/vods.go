@@ -19,7 +19,7 @@ func ListAllVODs(root string) (list []*VodInfo) {
 		if !isDir(e) {
 			continue
 		}
-		vodInfo := NewVodInfo(e)
+		vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e))
 		vodInfo.FillTree()
 
 		list = append(list, vodInfo)

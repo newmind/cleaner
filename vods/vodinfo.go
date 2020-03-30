@@ -48,11 +48,11 @@ func (p *VodInfo) String() string {
 	return p.id
 }
 
-func NewVodInfo(path string) *VodInfo {
+func NewVodInfo(root string, id string) *VodInfo {
 	return &VodInfo{
-		path:  path,
-		id:    filepath.Base(path),
-		intId: atoi(strings.Split(filepath.Base(path), "-")[0], 0),
+		path:  filepath.Join(root, id),
+		id:    id,
+		intId: atoi(strings.Split(id, "-")[0], 0),
 		years: []*Year{},
 	}
 }
