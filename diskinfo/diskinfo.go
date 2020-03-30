@@ -2,9 +2,6 @@ package diskinfo
 
 import (
 	"strconv"
-
-	log "github.com/sirupsen/logrus"
-	syscall "golang.org/x/sys/unix"
 )
 
 type DiskStatus struct {
@@ -12,22 +9,6 @@ type DiskStatus struct {
 	Used  uint64 `json:"used"`
 	Free  uint64 `json:"free"`
 	Avail uint64 `json:"avail"`
-}
-
-// disk usage of path/disk
-func DiskUsage(path string) (disk DiskStatus) {
-	fs := syscall.Statfs_t{}
-	err := syscall.Statfs(path, &fs)
-	if err != nil {
-		return
-	}
-	// log.Infof("%s %s %s\n", unescapeFstab(path), intToString(fs.Mntonname[:]), intToString(fs.Mntfromname[:]))
-	log.Infof("%s %#v\n", path, fs)
-	disk.All = fs.Blocks * uint64(fs.Bsize)
-	disk.Avail = fs.Bavail * uint64(fs.Bsize)
-	disk.Free = fs.Bfree * uint64(fs.Bsize)
-	disk.Used = disk.All - disk.Free
-	return
 }
 
 const (
