@@ -1,7 +1,13 @@
 package diskinfo
 
 import (
+	"github.com/shirou/gopsutil/disk"
+	log "github.com/sirupsen/logrus"
+	"path"
+	"path/filepath"
+	"sort"
 	"strconv"
+	"strings"
 )
 
 type DiskStatus struct {
@@ -58,4 +64,35 @@ func uintToString(orig []uint8) string {
 	}
 
 	return string(ret[0:size])
+}
+
+func GetAllPartitions() ([]disk.PartitionStat, error) {
+	pp, err := disk.Partitions(true)
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(pp, func(i, j int) bool {
+		return len(pp[i].Mountpoint) > len(pp[j].Mountpoint)
+	})
+	return pp, err
+}
+
+func GetMountpoint(dir string) string {
+	pp, err := GetAllPartitions()
+	if err != nil {
+		log.Error(err)
+		return ""
+	}
+	dir = path.Clean(dir)
+	dir, err = filepath.Abs(dir)
+	if err != nil {
+		log.Error(err)
+		return ""
+	}
+	for _, p := range pp {
+		if strings.HasPrefix(dir, p.Mountpoint) {
+			return p.Mountpoint
+		}
+	}
+	return ""
 }

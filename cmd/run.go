@@ -3,6 +3,7 @@ package cmd
 import (
 	"container/list"
 	"fmt"
+	"gitlab.markany.com/argos/cleaner/diskinfo"
 	"os"
 	"os/signal"
 	"path"
@@ -89,10 +90,12 @@ func loadConfig() {
 
 	dirs := []string{}
 	if len(vodPath) > 0 {
-		dirs = append(dirs, path.Clean(vodPath))
+		vodPath = path.Clean(vodPath)
+		dirs = append(dirs, vodPath)
 	}
 	if len(imagePath) > 0 {
-		dirs = append(dirs, path.Clean(imagePath))
+		imagePath = path.Clean(imagePath)
+		dirs = append(dirs, imagePath)
 	}
 
 	if len(dirs) == 0 {
@@ -114,20 +117,22 @@ func loadConfig() {
 	}
 	exPath := filepath.Dir(executable)
 	for _, d := range dirs {
+		d := filepath.Clean(d)
 		d, err = filepath.Abs(d)
 		if strings.HasPrefix(exPath, d) {
-			fmt.Printf("Path must not directory of executable")
-			fmt.Printf("Usage : ./%s run [options] --paths=/foo,/bar  \n", appName)
+			fmt.Printf("Path must not directory of executable\n")
+			fmt.Printf("Usage : ./%s run [options] --vod_path=/foo --image_path=/images \n", appName)
 			//flag.PrintDefaults()
 			os.Exit(1)
 		}
 	}
 
 	for i, d := range dirs {
-		d := filepath.Clean(d)
-		if realD, err := filepath.EvalSymlinks(d); err != nil || realD != d {
-			fmt.Printf("Symbolic link is not supported : %s -> %s \n", d, realD)
-			os.Exit(1)
+		if _, err := os.Stat(d); err == nil {
+			if realD, err := filepath.EvalSymlinks(d); err != nil || realD != d {
+				fmt.Printf("Symbolic link is not supported : %s -> %s \n", d, realD)
+				os.Exit(1)
+			}
 		}
 		dirs[i] = filepath.Clean(d)
 	}
@@ -170,6 +175,22 @@ func run() {
 	}
 
 	log.Infof("Starting %v (debug=%v, dryRun=%v)...\n", appName, debug, dryRun)
+
+	log.Info("All partitions : ")
+	partitions, err := diskinfo.GetAllPartitions()
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, p := range partitions {
+		log.Info(p.String())
+	}
+
+	diskMap := getDiskPathMap(vodPath, imagePath)
+
+	for k, v := range diskMap {
+		_, _ = k, v
+
+	}
 
 	//
 	// 파일 감지를 먼저 시작하고, 스캔을 나중에 함. 파일이 중복되어도 큰 문제 없음
@@ -221,6 +242,26 @@ func run() {
 		done <- true
 	})
 	<-done
+}
+
+func getDiskPathMap(paths ...string) map[string][]string {
+	diskMap := map[string][]string{}
+
+	for _, dir := range paths {
+		if len(dir) > 0 {
+			mountPoint := diskinfo.GetMountpoint(dir)
+			if len(mountPoint) == 0 {
+				log.Fatalln("Could not find mountpoint of ", dir)
+			}
+			log.Infof("Mountpoint of \"%s\" is \"%s\\n", dir, mountPoint)
+			if val, ok := diskMap[mountPoint]; ok {
+				diskMap[mountPoint] = append(val, dir)
+			} else {
+				diskMap[mountPoint] = []string{dir}
+			}
+		}
+	}
+	return diskMap
 }
 
 func freeUpSpace(scannedFiles []*fileinfo.FileInfo, qFilesWatched *list.List, mutexQ sync.Mutex) {

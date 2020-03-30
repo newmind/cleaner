@@ -11,6 +11,10 @@ import (
 
 func ListAllVODs(root string) (list []*VodInfo) {
 	list = []*VodInfo{}
+	if _, err := os.Stat(root); err != nil && os.IsNotExist(err) {
+		return
+	}
+
 	matches, err := filepath.Glob(filepath.Join(root, "*-0-0"))
 	if err != nil {
 		log.Error(err)
