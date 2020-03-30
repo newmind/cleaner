@@ -99,3 +99,4 @@ fabric.properties
 /cleaner
 /cleaner.exe
 /cleaner-linux-amd64
+/util/*/*-linux-amd64
