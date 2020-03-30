@@ -104,7 +104,8 @@ func loadConfig() {
 	}
 	exPath := filepath.Dir(executable)
 	for _, d := range dirs {
-		if d == exPath {
+		d, err = filepath.Abs(d)
+		if strings.HasPrefix(exPath, d) {
 			fmt.Printf("Path must not directory of executable")
 			fmt.Printf("Usage : ./%s run [options] --paths=/foo,/bar  \n", appName)
 			//flag.PrintDefaults()
