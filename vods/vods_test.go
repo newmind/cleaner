@@ -12,7 +12,7 @@ import "github.com/stretchr/testify/assert"
 const root string = "../test/vods"
 
 func init() {
-	os.Mkdir(root, os.ModePerm)
+	_ = os.Mkdir(root, os.ModePerm)
 }
 
 type TestVODInfo struct {
@@ -21,7 +21,7 @@ type TestVODInfo struct {
 }
 
 func (p *TestVODInfo) deleteLocal() {
-	os.RemoveAll(p.path)
+	_ = os.RemoveAll(p.path)
 }
 
 func generateTestVOD(root string, id string, jsonVodTree string) (error, *TestVODInfo) {
@@ -34,13 +34,13 @@ func generateTestVOD(root string, id string, jsonVodTree string) (error, *TestVO
 		return err, nil
 	}
 
-	os.Mkdir(filepath.Join(root, id), os.ModePerm)
+	_ = os.Mkdir(filepath.Join(root, id), os.ModePerm)
 	for year, months := range tree.Years {
-		os.Mkdir(filepath.Join(root, id, strconv.Itoa(year)), os.ModePerm)
+		_ = os.Mkdir(filepath.Join(root, id, strconv.Itoa(year)), os.ModePerm)
 		for month, days := range months {
-			os.Mkdir(filepath.Join(root, id, strconv.Itoa(year), strconv.Itoa(month)), os.ModePerm)
+			_ = os.Mkdir(filepath.Join(root, id, strconv.Itoa(year), strconv.Itoa(month)), os.ModePerm)
 			for _, day := range days {
-				os.Mkdir(filepath.Join(root, id, strconv.Itoa(year), strconv.Itoa(month), strconv.Itoa(day)), os.ModePerm)
+				_ = os.Mkdir(filepath.Join(root, id, strconv.Itoa(year), strconv.Itoa(month), strconv.Itoa(day)), os.ModePerm)
 			}
 		}
 	}
