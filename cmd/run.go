@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
@@ -35,8 +36,9 @@ var (
 	freePercent    int // 여유공간 몇퍼센트 유지할지
 	dryRun         bool
 	debug          bool
-	paths          []string
 	serverPort     string
+	vodPath        string
+	imagePath      string
 
 	cpuprofile string
 )
@@ -63,7 +65,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// runCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	runCmd.Flags().StringSliceVar(&paths, "paths", []string{}, "paths to watch and clean (required)")
 	runCmd.Flags().BoolVar(&deleteEmptyDir, "delete_empty_dir", true, "delete empty dir")
 	runCmd.Flags().BoolVar(&deleteHidden, "delete_hidden", false, "delete .(dot) files or dirs")
 	runCmd.Flags().StringVar(&interval, "interval", "100ms", "poll interval to check free-space")
@@ -72,6 +73,8 @@ func init() {
 	runCmd.Flags().BoolVar(&debug, "debug", true, "use debug logging mode")
 	runCmd.Flags().StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
 	runCmd.Flags().StringVar(&serverPort, "server_port", "8089", "http port")
+	runCmd.Flags().StringVar(&vodPath, "vod_path", "", "vod path (required)")
+	runCmd.Flags().StringVar(&imagePath, "image_path", "", "image path (required)")
 }
 
 func loadConfig() {
@@ -84,10 +87,17 @@ func loadConfig() {
 	}
 	viper.Set("interval", parsedInterval)
 
-	dirs := viper.GetStringSlice("paths")
+	dirs := []string{}
+	if len(vodPath) > 0 {
+		dirs = append(dirs, path.Clean(vodPath))
+	}
+	if len(imagePath) > 0 {
+		dirs = append(dirs, path.Clean(imagePath))
+	}
 
 	if len(dirs) == 0 {
-		fmt.Printf("Usage : ./%s run [options] --paths=/foo,/bar  \n", appName)
+		fmt.Printf("Usage : ./%s run [options] --vod_path=/foo --image_path=/images \n", appName)
+		fmt.Printf("  둘중에 하나는 있어야 함 \n", appName)
 		//flag.PrintDefaults()
 		os.Exit(1)
 		//curDir, err := os.Getwd()
@@ -226,7 +236,7 @@ func freeUpSpace(scannedFiles []*fileinfo.FileInfo, qFilesWatched *list.List, mu
 			panic(err)
 		}
 
-		// usage.Total 에는 사스템 예약공간이 포함되어서 용량이 다를수 있음
+		// usage.Total 에는 시스템 예약공간이 포함되어서 용량이 다를수 있음
 		// https://github.com/shirou/gopsutil/issues/562
 		total := usage.Used + usage.Free
 		deletedSize := int64(0)
