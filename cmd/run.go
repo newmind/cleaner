@@ -97,7 +97,7 @@ func loadConfig() {
 
 	if len(dirs) == 0 {
 		fmt.Printf("Usage : ./%s run [options] --vod_path=/foo --image_path=/images \n", appName)
-		fmt.Printf("  둘중에 하나는 있어야 함 \n", appName)
+		fmt.Println("  둘중에 하나는 있어야 함")
 		//flag.PrintDefaults()
 		os.Exit(1)
 		//curDir, err := os.Getwd()

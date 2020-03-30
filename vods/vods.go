@@ -49,6 +49,7 @@ func atoi(s string, def int) int {
 	return def
 }
 
+//ListOldestCCTV : list 내에서 가장 오래된 날짜의 모든 목록 리턴
 func ListOldestCCTV(list []*VodInfo) (result []*VodInfo) {
 	result = []*VodInfo{}
 	var (

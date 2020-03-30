@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//const root = "../test"
+const root = "../test"
 
-const root string = "/Volumes/RAMDisk"
+//const root string = "/Volumes/RAMDisk"
 
 func init() {
 	os.Mkdir(root, os.ModePerm)
