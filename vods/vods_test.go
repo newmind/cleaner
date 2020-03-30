@@ -142,15 +142,16 @@ func TestDeleteOldestVOD(t *testing.T) {
 		list[0].DeleteOldestDay(true)
 	}
 
-	// reload list from disk
-	list = ListAllVODs(root)
-
 	// 2월 데이터 나와야 함
 	found, y, m, d = list[0].GetOldestDay()
 	t.Log(found, y, m, d)
 	assert.Equal(t, 2020, y)
 	assert.Equal(t, 2, m)
 	assert.Equal(t, 1, d)
+
+	// reload list from disk
+	list2 := ListAllVODs(root)
+	assert.Equal(t, list2, list, "should be equal, after reloading")
 }
 
 func TestEmptyDir(t *testing.T) {
@@ -245,20 +246,83 @@ func TestYearChanged(t *testing.T) {
 	assert.Equal(t, 13, d)
 
 	// reload
-	list = ListAllVODs(root)
-	found, y, m, d = list[0].GetOldestDay()
-	t.Log(found, y, m, d)
-	assert.Equal(t, 2020, y)
-	assert.Equal(t, 1, m)
-	assert.Equal(t, 13, d)
+	list2 := ListAllVODs(root)
+	assert.Equal(t, list2, list, "should be equal, after reloading")
 }
 
 func TestListOldestCCTV(t *testing.T) {
-	list := ListAllVODs(root)
-	oldestCCTVs := ListOldestCCTV(list)
-
-	for _, v := range oldestCCTVs {
-		found, y, m, d := v.GetOldestDay()
-		t.Log(v.id, found, y, m, d)
+	// 순차적으로 여러버 테스트
+	err, v1 := generateTestVOD(root, "1-0-0", `{"years": 
+		{"2020":{ "1":[13,14,15],
+				  "2":[1,2,3,4,5,6,7,8,9]
+		 	    }
+		}
+	}`)
+	if err != nil {
+		t.Fatal(err)
 	}
+	if v1 != nil {
+		defer v1.deleteLocal()
+	}
+
+	err, v2 := generateTestVOD(root, "2-0-0", `{"years": 
+		{"2019":{ "12":[15]
+                },
+		 "2020":{ "1":[13,14,15],
+				  "2":[1,2,3,4,5,6,7,8,9]
+				}
+		}
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v2 != nil {
+		defer v2.deleteLocal()
+	}
+
+	err, v3 := generateTestVOD(root, "3-0-0", `{"years": 
+		{"2020":{ "1":[13,14,15],
+				  "2":[1,2,3,4,5,6,7,8,9]
+		 	    }
+		}
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v3 != nil {
+		defer v3.deleteLocal()
+	}
+
+	list := ListAllVODs(root)
+
+	// get
+	oldestCCTVs := ListOldestCCTV(list)
+	assert.Equal(t, 1, len(oldestCCTVs), "length == 1")
+	_, y, m, d := oldestCCTVs[0].GetOldestDay()
+	assert.Equal(t, 2019, y)
+	assert.Equal(t, 12, m)
+	assert.Equal(t, 15, d)
+
+	// delete
+	oldestCCTVs[0].DeleteOldestDay(true)
+
+	// get
+	oldestCCTVs = ListOldestCCTV(list)
+	assert.Equal(t, 3, len(oldestCCTVs), "length == 3")
+	_, y, m, d = oldestCCTVs[0].GetOldestDay()
+	assert.Equal(t, 2020, y)
+	assert.Equal(t, 1, m)
+	assert.Equal(t, 13, d)
+
+	// delete
+	oldestCCTVs[0].DeleteOldestDay(true)
+	oldestCCTVs = ListOldestCCTV(list)
+	assert.Equal(t, 2, len(oldestCCTVs), "length == 2")
+	assert.Equal(t, 2020, y)
+	assert.Equal(t, 1, m)
+	assert.Equal(t, 13, d)
+
+	// after reloading
+	list2 := ListAllVODs(root)
+	assert.Equal(t, list2, list, "should be equal after reload")
 }

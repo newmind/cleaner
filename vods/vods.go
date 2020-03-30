@@ -57,7 +57,9 @@ func ListOldestCCTV(list []*VodInfo) (result []*VodInfo) {
 	for _, cctv := range list {
 		found, y, m, d := cctv.GetOldestDay()
 		if found {
-			if y < minY && m < minM && d < minD {
+			if y < minY ||
+				y <= minY && m < minM ||
+				y <= minY && m <= minM && d < minD {
 				result = []*VodInfo{cctv}
 				minY, minM, minD = y, m, d
 			} else if y == minY && m == minM && d == minD {
