@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"container/list"
 	"fmt"
-	"gitlab.markany.com/argos/cleaner/diskinfo"
 	"os"
 	"os/signal"
 	"path"
@@ -11,15 +9,14 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
+	"github.com/robfig/cron/v3"
+	"gitlab.markany.com/argos/cleaner/diskinfo"
 	"gitlab.markany.com/argos/cleaner/service"
-
-	"gitlab.markany.com/argos/cleaner/fileinfo"
-	"gitlab.markany.com/argos/cleaner/scanner"
-	"gitlab.markany.com/argos/cleaner/watcher"
+	"gitlab.markany.com/argos/cleaner/sync"
+	"gitlab.markany.com/argos/cleaner/vods"
 
 	"github.com/shirou/gopsutil/disk"
 	log "github.com/sirupsen/logrus"
@@ -68,7 +65,7 @@ func init() {
 	// runCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	runCmd.Flags().BoolVar(&deleteEmptyDir, "delete_empty_dir", true, "delete empty dir")
 	runCmd.Flags().BoolVar(&deleteHidden, "delete_hidden", false, "delete .(dot) files or dirs")
-	runCmd.Flags().StringVar(&interval, "interval", "100ms", "poll interval to check free-space")
+	runCmd.Flags().StringVar(&interval, "interval", "1m", "poll interval to check free-space")
 	runCmd.Flags().IntVar(&freePercent, "free_percent", 10, "Keep free percent")
 	runCmd.Flags().BoolVar(&dryRun, "dry_run", true, "dry run")
 	runCmd.Flags().BoolVar(&debug, "debug", true, "use debug logging mode")
@@ -80,13 +77,12 @@ func init() {
 
 func loadConfig() {
 	// Parse the interval string into a time.Duration.
-	parsedInterval, err := time.ParseDuration(interval)
+	_, err := time.ParseDuration(interval)
 	if err != nil {
 		log.Error(err)
-		fmt.Println(`Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h"`)
+		fmt.Println(`Valid time units are "s", "m", "h"`)
 		os.Exit(1)
 	}
-	viper.Set("interval", parsedInterval)
 
 	dirs := []string{}
 	if len(vodPath) > 0 {
@@ -128,6 +124,7 @@ func loadConfig() {
 	}
 
 	for i, d := range dirs {
+		d := filepath.Clean(d)
 		if _, err := os.Stat(d); err == nil {
 			if realD, err := filepath.EvalSymlinks(d); err != nil || realD != d {
 				fmt.Printf("Symbolic link is not supported : %s -> %s \n", d, realD)
@@ -161,6 +158,26 @@ func formatFilePath(path string) string {
 	return arr[len(arr)-1]
 }
 
+type PathType int
+
+const (
+	PathTypeVOD PathType = iota
+	PathTypeImage
+)
+
+type PathInfo struct {
+	Path string
+	Type PathType
+}
+
+func (p PathInfo) String() string {
+	if p.Type == PathTypeVOD {
+		return p.Path + "[VOD]"
+	} else {
+		return p.Path + "[image]"
+	}
+}
+
 func run() {
 	loadConfig()
 	initLogger()
@@ -174,7 +191,7 @@ func run() {
 		defer pprof.StopCPUProfile()
 	}
 
-	log.Infof("Starting %v (debug=%v, dryRun=%v)...\n", appName, debug, dryRun)
+	log.Infof("Starting %v (debug=%v, dryRun=%v)...", appName, debug, dryRun)
 
 	log.Info("All partitions : ")
 	partitions, err := diskinfo.GetAllPartitions()
@@ -185,56 +202,32 @@ func run() {
 		log.Info(p.String())
 	}
 
-	diskMap := getDiskPathMap(vodPath, imagePath)
+	// map[partition] : []string{path}
+	diskMap := getDiskPathMap(
+		PathInfo{Path: vodPath, Type: PathTypeVOD},
+		PathInfo{Path: imagePath, Type: PathTypeImage})
 
-	for k, v := range diskMap {
-		_, _ = k, v
+	cronCleaner := cron.New(cron.WithSeconds())
 
-	}
-
-	//
-	// 파일 감지를 먼저 시작하고, 스캔을 나중에 함. 파일이 중복되어도 큰 문제 없음
-	//
-
-	// 1. 파일감지 초기화
-	// 파일정보 전송용 버퍼 채널
-	// 감시된 파일은 생성(created)된 순서대로 들어오므로, linked queue 사용
-	log.Info("Notification handler starting ...")
-	qFilesWatched := list.New()
-	mutexQ := sync.Mutex{}
-	chWatcher := make(chan fileinfo.FileInfo, 1000)
-
-	// 2. 파일와처 채널 리시버
-	go watcher.HandleFileCreation(chWatcher, qFilesWatched, &mutexQ)
-
-	// 3. 디렉토리의 새로운 파일 감시
-	for _, dir := range viper.GetStringSlice("paths") {
-		log.Infof("Watching a directory \"%v\" ...", dir)
-		if err := watcher.Watch(dir, chWatcher); err != nil {
-			log.Panic(err)
+	for partition, pathInfos := range diskMap {
+		log.Infof("Free up partition %s %s\n", partition, pathInfos)
+		isRunning := &sync.TAtomBool{}
+		deleter := func() {
+			freeUpDisk(partition, pathInfos, isRunning)
+		}
+		_, err := cronCleaner.AddFunc(fmt.Sprintf("@every %s", interval), deleter)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
-
-	// 4. 디렉토리 스캔
-	var scannedFiles []*fileinfo.FileInfo
-	log.Infof("Scanning directories [%s] ...", viper.GetStringSlice("paths"))
-	scannedFiles = scanner.ScanAllFiles(viper.GetStringSlice("paths"))
-	log.Infof("  scanned %v files\n", len(scannedFiles))
-
-	// 5. 여유 공간 확보를 위해서, 오래된 파일부터 삭제
-	usage, err := disk.Usage(viper.GetStringSlice("paths")[0])
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Info("Disk usage : ", usage)
-	log.Info("Free up disk ...")
-	go freeUpSpace(scannedFiles, qFilesWatched, mutexQ)
+	cronCleaner.Start()
 
 	go service.StartWebServer(viper.GetString("server_port"))
 
 	done := make(chan bool)
 	handleSigterm(func() {
 		log.Info("Exit")
+		cronCleaner.Stop()
 		if cpuprofile != "" {
 			pprof.StopCPUProfile()
 		}
@@ -244,100 +237,98 @@ func run() {
 	<-done
 }
 
-func getDiskPathMap(paths ...string) map[string][]string {
-	diskMap := map[string][]string{}
+func getDiskPathMap(paths ...PathInfo) map[string][]PathInfo {
+	diskMap := map[string][]PathInfo{}
 
-	for _, dir := range paths {
-		if len(dir) > 0 {
-			mountPoint := diskinfo.GetMountpoint(dir)
+	for _, pathInfo := range paths {
+		if len(pathInfo.Path) > 0 {
+			mountPoint := diskinfo.GetMountpoint(pathInfo.Path)
 			if len(mountPoint) == 0 {
-				log.Fatalln("Could not find mountpoint of ", dir)
+				log.Fatalln("Could not find mountpoint of ", pathInfo)
 			}
-			log.Infof("Mountpoint of \"%s\" is \"%s\\n", dir, mountPoint)
+			log.Infof("Mountpoint of '%s' is '%s'\n", pathInfo, mountPoint)
 			if val, ok := diskMap[mountPoint]; ok {
-				diskMap[mountPoint] = append(val, dir)
+				diskMap[mountPoint] = append(val, pathInfo)
 			} else {
-				diskMap[mountPoint] = []string{dir}
+				diskMap[mountPoint] = []PathInfo{pathInfo}
 			}
 		}
 	}
 	return diskMap
 }
 
-func freeUpSpace(scannedFiles []*fileinfo.FileInfo, qFilesWatched *list.List, mutexQ sync.Mutex) {
-	pollingInterval := viper.GetDuration("interval")
-	dirs := viper.GetStringSlice("paths")
+func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *sync.TAtomBool) {
+	log.Debugln("freeUpDisk", partition, pathInfos)
+	if isRunning.Get() {
+		log.Warnln("still running ...")
+		return
+	}
+	isRunning.Set(true)
+	defer isRunning.Set(false)
+
 	freePercent := viper.GetInt("free_percent")
 
-	for {
-		//TODO: disk 별로 여유공간 유지해야함
-		usage, err := disk.Usage(dirs[0])
+	usage, err := disk.Usage(partition)
+	if err != nil {
+		log.Fatal(err)
+		panic(err)
+	}
+
+	for usage.UsedPercent+float64(freePercent) >= 100 {
+		var oldVodInfos []*vods.VodInfo = nil
+		var oldImageInfos []*vods.VodInfo = nil
+
+		for _, info := range pathInfos {
+			switch info.Type {
+			case PathTypeVOD:
+				allList := vods.ListAllVODs(info.Path)
+				oldVodInfos = vods.ListOldestCCTV(allList)
+			case PathTypeImage:
+				allList := vods.ListAllVODs(info.Path)
+				oldImageInfos = vods.ListOldestCCTV(allList)
+			}
+		}
+
+		var foundVod bool
+		var yVod, mVod, dVod int
+		if len(oldVodInfos) > 0 {
+			foundVod, yVod, mVod, dVod = oldVodInfos[0].GetOldestDay()
+		}
+
+		var foundImage bool
+		var yImage, mImage, dImage int
+		if len(oldImageInfos) > 0 {
+			foundImage, yImage, mImage, dImage = oldImageInfos[0].GetOldestDay()
+		}
+
+		if foundVod && foundImage {
+			if yVod < yImage ||
+				yVod <= yImage && mVod < mImage ||
+				yVod <= yImage && mVod <= mImage || dVod < dImage {
+				oldVodInfos[0].DeleteOldestDay(!viper.GetBool("dry_run"))
+				oldVodInfos = oldVodInfos[1:]
+			} else {
+				oldImageInfos[0].DeleteOldestDay(!viper.GetBool("dry_run"))
+				oldImageInfos = oldImageInfos[1:]
+			}
+		} else if foundVod {
+			oldVodInfos[0].DeleteOldestDay(!viper.GetBool("dry_run"))
+			oldVodInfos = oldVodInfos[1:]
+		} else if foundImage {
+			oldImageInfos[0].DeleteOldestDay(!viper.GetBool("dry_run"))
+			oldImageInfos = oldImageInfos[1:]
+		} else {
+			log.Warnf("Could not free up disk [%s]\n", partition)
+			break
+		}
+
+		// 다시 계산
+		usage, err = disk.Usage(partition)
 		if err != nil {
 			log.Fatal(err)
-			panic(err)
 		}
-
-		// usage.Total 에는 시스템 예약공간이 포함되어서 용량이 다를수 있음
-		// https://github.com/shirou/gopsutil/issues/562
-		total := usage.Used + usage.Free
-		deletedSize := int64(0)
-		usedPercent := usage.UsedPercent
-		for usedPercent+float64(freePercent) >= 100 {
-			// 1. scan 한 파일 먼저 지우고,(다 지웠으면)
-			// 2. 파일감지로 새로 추가된 파일들 지움
-			if len(scannedFiles) > 0 {
-				last := scannedFiles[len(scannedFiles)-1]
-				if fi, err := os.Lstat(last.Path); err == nil {
-					deletedSize += fi.Size()
-					if err := remove(last.Path); err != nil {
-						log.Error(err)
-					}
-					log.Debug("Deleted :", last.Path)
-					if deleteEmptyDir {
-						// try removing dir if empty
-						err := remove(filepath.Dir(last.Path))
-						if err == nil {
-							log.Debug("Deleted[dir] :", filepath.Dir(last.Path))
-						}
-					}
-				}
-				// remove from slice
-				scannedFiles = scannedFiles[:len(scannedFiles)-1]
-			} else if qFilesWatched.Len() > 0 {
-				mutexQ.Lock()
-				if elem := qFilesWatched.Front(); elem != nil {
-					path := elem.Value.(*fileinfo.FileInfo).Path
-					if fi, err := os.Lstat(path); err == nil {
-						deletedSize += fi.Size()
-						remove(path)
-						log.Debug("Deleted :", path)
-						if deleteEmptyDir {
-							// try removing dir if empty
-							err := remove(filepath.Dir(path))
-							if err == nil {
-								log.Debug("Deleted[dir] :", filepath.Dir(path))
-							}
-						}
-					}
-					qFilesWatched.Remove(elem)
-				}
-				mutexQ.Unlock()
-			}
-
-			// 다시 계산
-			usedPercent = (float64(usage.Used-uint64(deletedSize)) / float64(total)) * 100.0
-		}
-
-		time.Sleep(pollingInterval)
 	}
-}
-
-func remove(path string) error {
-	dryRun := viper.GetBool("dry_run")
-	if dryRun {
-		return nil
-	}
-	return os.Remove(path)
+	time.Sleep(time.Second * 15)
 }
 
 // Handles Ctrl+C or most other means of "controlled" shutdown gracefully. Invokes the supplied func before exiting.

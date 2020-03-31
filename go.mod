@@ -10,6 +10,7 @@ require (
 	github.com/labstack/echo/v4 v4.1.14
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.1.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil v2.20.2+incompatible
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.6
