@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 )
 import "github.com/stretchr/testify/assert"
 
@@ -49,6 +50,11 @@ func generateTestVOD(root string, id string, jsonVodTree string) (error, *TestVO
 }
 
 func TestListAllVODs(t *testing.T) {
+	os.RemoveAll(root)
+	time.Sleep(time.Millisecond * 10)
+	os.Mkdir(root, os.ModePerm)
+	time.Sleep(time.Millisecond * 10)
+
 	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
 		{"2020":{ "1":[13,14,15],
 				  "2":[1,2,3,4,5,6,7,8,9]
@@ -97,6 +103,9 @@ func TestListAllVODs(t *testing.T) {
 }
 
 func TestGetOldestVOD(t *testing.T) {
+	os.RemoveAll(root)
+	os.Mkdir(root, os.ModePerm)
+
 	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
 		{"2020":{ "1":[13,14,15],
 				  "2":[1,2,3,4,5,6,7,8,9]
@@ -116,6 +125,9 @@ func TestGetOldestVOD(t *testing.T) {
 }
 
 func TestDeleteOldestVOD(t *testing.T) {
+	os.RemoveAll(root)
+	os.Mkdir(root, os.ModePerm)
+
 	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
 		{"2020":{ "1":[13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31],
 				  "2":[1,2,3,4,5,6,7,8,9]
@@ -190,6 +202,9 @@ func TestEmptyRoot(t *testing.T) {
 }
 
 func TestEmptyDir(t *testing.T) {
+	os.RemoveAll(root)
+	os.Mkdir(root, os.ModePerm)
+
 	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
 		{"2020":{ "1":[],
 				  "2":[1,2,3,4,5,6,7,8,9]
@@ -232,6 +247,9 @@ func TestEmptyDir(t *testing.T) {
 }
 
 func TestMonthChanged(t *testing.T) {
+	os.RemoveAll(root)
+	os.Mkdir(root, os.ModePerm)
+
 	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
 		{"2020":{ "1":[31],
 				  "2":[1,2,3,4,5,6,7,8,9]
@@ -255,6 +273,9 @@ func TestMonthChanged(t *testing.T) {
 }
 
 func TestYearChanged(t *testing.T) {
+	os.RemoveAll(root)
+	os.Mkdir(root, os.ModePerm)
+
 	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
 		{
 		 "2019":{ "11":[],
@@ -286,6 +307,9 @@ func TestYearChanged(t *testing.T) {
 }
 
 func TestListOldestCCTV(t *testing.T) {
+	os.RemoveAll(root)
+	os.Mkdir(root, os.ModePerm)
+
 	// 순차적으로 여러버 테스트
 	err, v1 := generateTestVOD(root, "1-0-0", `{"years": 
 		{"2020":{ "1":[13,14,15],
