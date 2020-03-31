@@ -184,12 +184,15 @@ LOOP:
 	}
 
 	if found {
-		log.Debugf("Delete old vod [%s] %d-%d-%d\n", p.id, y, m, d)
+		log.Debugf("Delete old vod [%s] %d-%d-%d", p.id, y, m, d)
 		// delete day
 		month := p.years[yIdx].months[mIdx]
 		month.deleteDayByIndex(dIdx)
 		if deleteLocalDir {
 			toDelete := filepath.Join(p.path, strconv.Itoa(y), strconv.Itoa(m), strconv.Itoa(d))
+			// Windows 에서는 삭제가 바로 안되는 문제 있음.
+			// https://github.com/golang/go/issues/20841
+			// 그래서 RemoveAll 이후 상위 디렉토리를 os.Remove 로 삭제시 실패남
 			err := os.RemoveAll(toDelete)
 			if err != nil {
 				log.Error(err)
@@ -197,7 +200,8 @@ LOOP:
 		}
 
 		if month.isEmpty() {
-			p.years[yIdx].deleteMonthByIndex(mIdx)
+			year := p.years[yIdx]
+			year.deleteMonthByIndex(mIdx)
 			if deleteLocalDir {
 				toDelete := filepath.Join(p.path, strconv.Itoa(y), strconv.Itoa(m))
 				err := os.Remove(toDelete)

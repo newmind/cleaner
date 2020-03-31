@@ -21,7 +21,7 @@ var rootCmd = &cobra.Command{
 	Short: "cleaner",
 	Long: `디렉토리를 감시하면서 적정한 여유공간을 유지하게 함:
 
-cleaner run --paths "./test,/vods".`,
+cleaner run --vod_path=./vod --image_path=/images".`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {

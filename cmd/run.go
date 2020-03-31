@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path"
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
@@ -77,7 +76,7 @@ func init() {
 
 func loadConfig() {
 	// Parse the interval string into a time.Duration.
-	_, err := time.ParseDuration(interval)
+	_, err := time.ParseDuration(viper.GetString("INTERVAL"))
 	if err != nil {
 		log.Error(err)
 		fmt.Println(`Valid time units are "s", "m", "h"`)
@@ -85,27 +84,21 @@ func loadConfig() {
 	}
 
 	dirs := []string{}
-	if len(vodPath) > 0 {
-		vodPath = path.Clean(vodPath)
+	if len(viper.GetString("VOD_PATH")) > 0 {
+		vodPath = filepath.Clean(viper.GetString("VOD_PATH"))
 		dirs = append(dirs, vodPath)
 	}
-	if len(imagePath) > 0 {
-		imagePath = path.Clean(imagePath)
+	if len(viper.GetString("IMAGE_PATH")) > 0 {
+		imagePath = filepath.Clean(viper.GetString("IMAGE_PATH"))
 		dirs = append(dirs, imagePath)
 	}
 
 	if len(dirs) == 0 {
 		fmt.Printf("Usage : ./%s run [options] --vod_path=/foo --image_path=/images \n", appName)
 		fmt.Println("  둘중에 하나는 있어야 함")
-		//flag.PrintDefaults()
 		os.Exit(1)
-		//curDir, err := os.Getwd()
-		//if err != nil {
-		//	log.Fatalln(err)
-		//}
-		//// 아무런 인자가 없다면, temp디렉토리를 추가
-		//dirs = append(dirs, os.TempDir())
 	}
+
 	// directory 에 현재 실행파일의  디렉토리가 실수로 포함되지 않게 함
 	executable, err := os.Executable()
 	if err != nil {
@@ -117,13 +110,12 @@ func loadConfig() {
 		d, err = filepath.Abs(d)
 		if strings.HasPrefix(exPath, d) {
 			fmt.Printf("Path must not directory of executable\n")
-			fmt.Printf("Usage : ./%s run [options] --vod_path=/foo --image_path=/images \n", appName)
-			//flag.PrintDefaults()
+			fmt.Printf("Usage : ./%s run [options] --vod_path=/foo --image_path=/images\n", appName)
 			os.Exit(1)
 		}
 	}
 
-	for i, d := range dirs {
+	for _, d := range dirs {
 		d := filepath.Clean(d)
 		if _, err := os.Stat(d); err == nil {
 			if realD, err := filepath.EvalSymlinks(d); err != nil || realD != d {
@@ -131,9 +123,7 @@ func loadConfig() {
 				os.Exit(1)
 			}
 		}
-		dirs[i] = filepath.Clean(d)
 	}
-	viper.Set("paths", dirs)
 	fmt.Println("config :", viper.AllSettings())
 }
 
@@ -182,8 +172,8 @@ func run() {
 	loadConfig()
 	initLogger()
 
-	if cpuprofile != "" {
-		f, err := os.Create(cpuprofile)
+	if viper.GetString("CPUPROFILE") != "" {
+		f, err := os.Create(viper.GetString("CPUPROFILE"))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -191,7 +181,7 @@ func run() {
 		defer pprof.StopCPUProfile()
 	}
 
-	log.Infof("Starting %v (debug=%v, dryRun=%v)...", appName, debug, dryRun)
+	log.Infof("Starting %v (debug=%v, dryRun=%v)...", appName, viper.GetBool("DEBUG"), viper.GetBool("DRY_RUN"))
 
 	log.Info("All partitions : ")
 	partitions, err := diskinfo.GetAllPartitions()
@@ -210,7 +200,7 @@ func run() {
 	cronCleaner := cron.New(cron.WithSeconds())
 
 	for partition, pathInfos := range diskMap {
-		log.Infof("Scheduled to delete %s %s\n", partition, pathInfos)
+		log.Infof("Scheduled to delete %s %s", partition, pathInfos)
 		isRunning := &sync.TAtomBool{}
 		p := partition  // capture
 		pi := pathInfos // capture
@@ -218,20 +208,20 @@ func run() {
 			freeUpDisk(p, pi, isRunning)
 		}
 
-		_, err := cronCleaner.AddFunc(fmt.Sprintf("@every %s", interval), deleter)
+		_, err := cronCleaner.AddFunc(fmt.Sprintf("@every %s", viper.GetString("INTERVAL")), deleter)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 	cronCleaner.Start()
 
-	go service.StartWebServer(viper.GetString("server_port"))
+	go service.StartWebServer(viper.GetString("SERVER_PORT"))
 
 	done := make(chan bool)
 	handleSigterm(func() {
 		log.Info("Exit")
 		cronCleaner.Stop()
-		if cpuprofile != "" {
+		if viper.GetString("CPUPROFILE") != "" {
 			pprof.StopCPUProfile()
 		}
 		service.StopWebServer()
@@ -249,7 +239,7 @@ func getDiskPathMap(paths ...PathInfo) map[string][]PathInfo {
 			if len(mountPoint) == 0 {
 				log.Fatalln("Could not find mountpoint of ", pathInfo)
 			}
-			log.Infof("Mountpoint of '%s' is '%s'\n", pathInfo, mountPoint)
+			log.Infof("Mountpoint of '%s' is '%s'", pathInfo, mountPoint)
 			if val, ok := diskMap[mountPoint]; ok {
 				diskMap[mountPoint] = append(val, pathInfo)
 			} else {
@@ -269,12 +259,25 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *sync.TAtomBoo
 	isRunning.Set(true)
 	defer isRunning.Set(false)
 
-	freePercent := viper.GetInt("free_percent")
+	freePercent := viper.GetInt("FREE_PERCENT")
+	dryRun := viper.GetBool("DRY_RUN")
 
 	usage, err := disk.Usage(partition)
 	if err != nil {
 		log.Fatal(err)
 		panic(err)
+	}
+
+	var allVodList []*vods.VodInfo = nil
+	var allImageList []*vods.VodInfo = nil
+
+	for _, info := range pathInfos {
+		switch info.Type {
+		case PathTypeVOD:
+			allVodList = vods.ListAllVODs(info.Path)
+		case PathTypeImage:
+			allImageList = vods.ListAllVODs(info.Path)
+		}
 	}
 
 	for usage.UsedPercent+float64(freePercent) >= 100 {
@@ -285,11 +288,9 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *sync.TAtomBoo
 		for _, info := range pathInfos {
 			switch info.Type {
 			case PathTypeVOD:
-				allList := vods.ListAllVODs(info.Path)
-				oldVodInfos = vods.ListOldestCCTV(allList)
+				oldVodInfos = vods.ListOldestCCTV(allVodList)
 			case PathTypeImage:
-				allList := vods.ListAllVODs(info.Path)
-				oldImageInfos = vods.ListOldestCCTV(allList)
+				oldImageInfos = vods.ListOldestCCTV(allImageList)
 			}
 		}
 
@@ -318,7 +319,7 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *sync.TAtomBoo
 		} else if foundImage {
 			oldImageInfos[0].DeleteOldestDay(!dryRun)
 		} else {
-			log.Warnf("Could not free up disk [%s]\n", partition)
+			log.Warnf("Could not free up disk [%s]", partition)
 			break
 		}
 

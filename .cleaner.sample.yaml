@@ -1,6 +1,7 @@
-paths:
-  - ./test
-#  - /data
+vod_path:
+  - ./vod
+image_path:
+  - /image
 delete_empty_dir: true
 delete_hidden: false
 interval: 100ms

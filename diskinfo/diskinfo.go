@@ -1,13 +1,13 @@
 package diskinfo
 
 import (
-	"github.com/shirou/gopsutil/disk"
-	log "github.com/sirupsen/logrus"
-	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/shirou/gopsutil/disk"
+	log "github.com/sirupsen/logrus"
 )
 
 type DiskStatus struct {
@@ -83,7 +83,7 @@ func GetMountpoint(dir string) string {
 		log.Error(err)
 		return ""
 	}
-	dir = path.Clean(dir)
+	dir = filepath.Clean(dir)
 	dir, err = filepath.Abs(dir)
 	if err != nil {
 		log.Error(err)
