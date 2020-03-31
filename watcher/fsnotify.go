@@ -32,7 +32,7 @@ func Watch(root string, ch chan fileinfo.FileInfo) error {
 			select {
 			// watch for events
 			case event := <-watcher.Events:
-				log.Debugf("EVENT: %s, %s\n", event.Name, event.Op)
+				log.Debugf("EVENT: %s, %s", event.Name, event.Op)
 
 				// Check the name if it is excluded map
 				if excludes.Contains(event.Name) {

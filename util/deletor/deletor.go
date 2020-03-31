@@ -62,7 +62,7 @@ func main() {
 	var scannedFiles []*fileinfo.FileInfo
 	log.Infof("Scanning directories [%s] ...", path)
 	scannedFiles = scanner.ScanAllFiles([]string{path})
-	log.Infof("  scanned %v files\n", len(scannedFiles))
+	log.Infof("  scanned %v files", len(scannedFiles))
 
 	usage, err := disk.Usage(path)
 	if err != nil {
@@ -99,7 +99,7 @@ func main() {
 
 		// 다시 계산
 		usedPercent = (float64(usage.Used-uint64(deletedSize)) / float64(total)) * 100.0
-		//log.Debugf("%v = (%v - %v) / %v\n", usedPercent, usage.Used, deletedSize, total)
+		//log.Debugf("%v = (%v - %v) / %v", usedPercent, usage.Used, deletedSize, total)
 	}
 	log.Infof("Total size deleted %d", deletedSize)
 

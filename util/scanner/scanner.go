@@ -18,7 +18,7 @@ func init() {
 }
 
 func main() {
-	log.Infof("Starting %v...\n", appName)
+	log.Infof("Starting %v...", appName)
 
 	path := flag.String("path", "", "[Required] Path where to create files")
 	flag.Parse()

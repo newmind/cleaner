@@ -329,7 +329,6 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *sync.TAtomBoo
 			log.Fatal(err)
 		}
 	}
-	//time.Sleep(time.Second * 15)
 }
 
 // Handles Ctrl+C or most other means of "controlled" shutdown gracefully. Invokes the supplied func before exiting.

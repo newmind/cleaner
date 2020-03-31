@@ -12,7 +12,7 @@ func TestGoFileWalk(t *testing.T) {
 	}
 
 	for _, f := range files {
-		t.Logf("%#v\n", *f)
-		//fmt.Printf("%#v\n", *f)
+		t.Logf("%#v", *f)
+		//fmt.Printf("%#v", *f)
 	}
 }
