@@ -210,11 +210,14 @@ func run() {
 	cronCleaner := cron.New(cron.WithSeconds())
 
 	for partition, pathInfos := range diskMap {
-		log.Infof("Free up partition %s %s\n", partition, pathInfos)
+		log.Infof("Scheduled to delete %s %s\n", partition, pathInfos)
 		isRunning := &sync.TAtomBool{}
+		p := partition  // capture
+		pi := pathInfos // capture
 		deleter := func() {
-			freeUpDisk(partition, pathInfos, isRunning)
+			freeUpDisk(p, pi, isRunning)
 		}
+
 		_, err := cronCleaner.AddFunc(fmt.Sprintf("@every %s", interval), deleter)
 		if err != nil {
 			log.Fatal(err)
@@ -258,7 +261,7 @@ func getDiskPathMap(paths ...PathInfo) map[string][]PathInfo {
 }
 
 func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *sync.TAtomBool) {
-	log.Debugln("freeUpDisk", partition, pathInfos)
+	log.Debugln("Free up disk", partition, pathInfos)
 	if isRunning.Get() {
 		log.Warnln("still running ...")
 		return
@@ -275,6 +278,7 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *sync.TAtomBoo
 	}
 
 	for usage.UsedPercent+float64(freePercent) >= 100 {
+
 		var oldVodInfos []*vods.VodInfo = nil
 		var oldImageInfos []*vods.VodInfo = nil
 

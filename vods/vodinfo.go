@@ -184,7 +184,7 @@ LOOP:
 	}
 
 	if found {
-		log.Debugf("DeleteOldestDay [%s] %d-%d-%d\n", p.id, y, m, d)
+		log.Debugf("Delete old vod [%s] %d-%d-%d\n", p.id, y, m, d)
 		// delete day
 		month := p.years[yIdx].months[mIdx]
 		month.deleteDayByIndex(dIdx)
