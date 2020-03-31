@@ -309,18 +309,14 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *sync.TAtomBoo
 			if yVod < yImage ||
 				yVod <= yImage && mVod < mImage ||
 				yVod <= yImage && mVod <= mImage || dVod < dImage {
-				oldVodInfos[0].DeleteOldestDay(!viper.GetBool("dry_run"))
-				oldVodInfos = oldVodInfos[1:]
+				oldVodInfos[0].DeleteOldestDay(!dryRun)
 			} else {
-				oldImageInfos[0].DeleteOldestDay(!viper.GetBool("dry_run"))
-				oldImageInfos = oldImageInfos[1:]
+				oldImageInfos[0].DeleteOldestDay(!dryRun)
 			}
 		} else if foundVod {
-			oldVodInfos[0].DeleteOldestDay(!viper.GetBool("dry_run"))
-			oldVodInfos = oldVodInfos[1:]
+			oldVodInfos[0].DeleteOldestDay(!dryRun)
 		} else if foundImage {
-			oldImageInfos[0].DeleteOldestDay(!viper.GetBool("dry_run"))
-			oldImageInfos = oldImageInfos[1:]
+			oldImageInfos[0].DeleteOldestDay(!dryRun)
 		} else {
 			log.Warnf("Could not free up disk [%s]\n", partition)
 			break
@@ -332,7 +328,7 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *sync.TAtomBoo
 			log.Fatal(err)
 		}
 	}
-	time.Sleep(time.Second * 15)
+	//time.Sleep(time.Second * 15)
 }
 
 // Handles Ctrl+C or most other means of "controlled" shutdown gracefully. Invokes the supplied func before exiting.
