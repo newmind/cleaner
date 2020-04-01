@@ -11,6 +11,7 @@ before_script:
 stages:
   - test
   - build
+  - package
   - deploy
 
 format:
@@ -34,7 +35,35 @@ compile:
     paths:
       - cleaner
   script:
+    - wget 192.168.1.115/ca-cert-markany.pem -O ~/ca-cert-markany.pem
+    - wget 192.168.1.115/ca-cert-markany.pem -O /etc/ssl/certs/ca-cert-markany.pem
+    - wget 192.168.1.115/ca-cert-markany.pem -O /usr/local/share/ca-certificates/ca-cert-markany.pem
+    - git config --global http.https://gitlab.markany.wm/.sslcainfo "~/ca-cert-markany.pem"
+    - export PATH=$PATH:$GOPATH/bin
     - go build -ldflags -s -o $CI_PROJECT_DIR/cleaner
   tags:
     - linux
     
+build_docker:
+  image: docker:latest
+  stage: package
+  artifacts:
+    name: $CI_PROJECT_NAME-docker-$CI_COMMIT_REF_NAME-$GOOS-$GOARCH
+    expire_in: 6 week
+    paths:
+      - $CI_PROJECT_NAME.tar.gz
+  dependencies:
+    - compile
+  services:
+    - name: docker:dind
+      command: ["--insecure-registry=nas.markany.wm"]
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker build --pull --cache-from "${CI_REGISTRY_IMAGE}:latest" --tag "${CI_REGISTRY_IMAGE}:latest" .
+    - docker tag "${CI_REGISTRY_IMAGE}:latest" "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}"
+    - test ! -z "${CI_COMMIT_TAG}" && docker push "${CI_REGISTRY_IMAGE}:latest"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}"
+    - docker tag "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}" ${CI_PROJECT_NAME}
+    - docker save "${CI_PROJECT_NAME}" "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}" | gzip -c > "${CI_PROJECT_NAME}.tar.gz"
+  tags:
+    - linux
