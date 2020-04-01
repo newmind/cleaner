@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"gitlab.markany.com/argos/cleaner/common"
 )
 
 type Day struct {
@@ -52,7 +53,7 @@ func NewVodInfo(root string, id string) *VodInfo {
 	return &VodInfo{
 		path:  filepath.Join(root, id),
 		id:    id,
-		intId: atoi(strings.Split(id, "-")[0], 0),
+		intId: common.Atoi(strings.Split(id, "-")[0], 0),
 		years: []*Year{},
 	}
 }
@@ -71,10 +72,10 @@ func (p *VodInfo) fillYear() {
 	}
 
 	for _, e := range matches {
-		if !isDir(e) {
+		if !common.IsDir(e) {
 			continue
 		}
-		year := atoi(filepath.Base(e), -1)
+		year := common.Atoi(filepath.Base(e), -1)
 		if year != -1 {
 			p.years = append(p.years, &Year{
 				y:      year,
@@ -100,10 +101,10 @@ func (p *VodInfo) fillMonth() {
 		}
 
 		for _, e := range matches {
-			if !isDir(e) {
+			if !common.IsDir(e) {
 				continue
 			}
-			month := atoi(filepath.Base(e), -1)
+			month := common.Atoi(filepath.Base(e), -1)
 			if month != -1 {
 				year.months = append(year.months, &Month{
 					m:    month,
@@ -132,10 +133,10 @@ func (p *VodInfo) fillDay() {
 			}
 
 			for _, e := range matches {
-				if !isDir(e) {
+				if !common.IsDir(e) {
 					continue
 				}
-				day := atoi(filepath.Base(e), -1)
+				day := common.Atoi(filepath.Base(e), -1)
 				if day != -1 {
 					month.days = append(month.days, &Day{
 						d:     day,
@@ -149,10 +150,6 @@ func (p *VodInfo) fillDay() {
 			})
 		}
 	}
-}
-
-func (p *VodInfo) GetYears() []*Year {
-	return p.years
 }
 
 func (p *VodInfo) GetOldestDay() (found bool, year int, month int, day int) {

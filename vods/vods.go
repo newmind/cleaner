@@ -4,9 +4,9 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 
 	log "github.com/sirupsen/logrus"
+	"gitlab.markany.com/argos/cleaner/common"
 )
 
 func ListAllVODs(root string) (list []*VodInfo) {
@@ -21,7 +21,7 @@ func ListAllVODs(root string) (list []*VodInfo) {
 		return
 	}
 	for _, e := range matches {
-		if !isDir(e) {
+		if !common.IsDir(e) {
 			continue
 		}
 		vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e))
@@ -33,24 +33,6 @@ func ListAllVODs(root string) (list []*VodInfo) {
 		return list[i].intId < list[j].intId
 	})
 	return
-}
-
-func isDir(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return info.IsDir()
-}
-
-func atoi(s string, def int) int {
-	if s == "" {
-		return def
-	}
-	if ret, err := strconv.Atoi(s); err == nil {
-		return ret
-	}
-	return def
 }
 
 //ListOldestCCTV : list 내에서 가장 오래된 날짜의 모든 목록 리턴
