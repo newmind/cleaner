@@ -35,6 +35,11 @@ compile:
     paths:
       - cleaner
   script:
+    - wget 192.168.1.115/ca-cert-markany.pem -O ~/ca-cert-markany.pem
+    - wget 192.168.1.115/ca-cert-markany.pem -O /etc/ssl/certs/ca-cert-markany.pem
+    - wget 192.168.1.115/ca-cert-markany.pem -O /usr/local/share/ca-certificates/ca-cert-markany.pem
+    - git config --global http.https://gitlab.markany.wm/.sslcainfo "~/ca-cert-markany.pem"
+    - export PATH=$PATH:$GOPATH/bin
     - go build -ldflags -s -o $CI_PROJECT_DIR/cleaner
   tags:
     - linux
