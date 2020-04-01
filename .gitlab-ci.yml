@@ -34,7 +34,7 @@ compile:
     paths:
       - cleaner
   script:
-    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/cleaner
+    - go build -ldflags -s -o $CI_PROJECT_DIR/cleaner
   tags:
     - linux
     
