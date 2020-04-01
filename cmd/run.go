@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
+	"gitlab.markany.com/argos/cleaner/common"
 	"gitlab.markany.com/argos/cleaner/diskinfo"
 	"gitlab.markany.com/argos/cleaner/service"
-	"gitlab.markany.com/argos/cleaner/sync"
 	"gitlab.markany.com/argos/cleaner/vods"
 
 	"github.com/shirou/gopsutil/disk"
@@ -201,7 +201,7 @@ func run() {
 
 	for partition, pathInfos := range diskMap {
 		log.Infof("Scheduled to delete %s %s", partition, pathInfos)
-		isRunning := &sync.TAtomBool{}
+		isRunning := &common.TAtomBool{}
 		p := partition  // capture
 		pi := pathInfos // capture
 		deleter := func() {
@@ -250,7 +250,7 @@ func getDiskPathMap(paths ...PathInfo) map[string][]PathInfo {
 	return diskMap
 }
 
-func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *sync.TAtomBool) {
+func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomBool) {
 	log.Debugln("Free up disk", partition, pathInfos)
 	if isRunning.Get() {
 		log.Warnln("still running ...")
