@@ -1,0 +1,36 @@
+image: golang:1.13
+
+variables:
+  REPO_NAME: gitlab.markany.wm/argos/cleaner
+
+before_script:
+  - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
+  - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
+  - cd $GOPATH/src/$REPO_NAME
+
+stages:
+  - test
+  - build
+  - deploy
+
+format:
+  stage: test
+  script:
+    - go fmt $(go list ./... | grep -v /vendor/)
+    - go vet $(go list ./... | grep -v /vendor/)
+
+compile:
+  stage: build
+  variables:
+    GOOS: "linux"
+    GOARCH: "amd64"
+    GO111MODULE: 'on'
+    CGO_ENABLED: "0"
+  artifacts:
+    name: $CI_PROJECT_NAME-sync-$CI_COMMIT_REF_NAME-$GOOS-$GOARCH
+    expire_in: 6 week
+    paths:
+      - cleaner
+  script:
+    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/cleaner
+    
