@@ -9,16 +9,34 @@ before_script:
   - cd $GOPATH/src/$REPO_NAME
 
 stages:
+  - prepare
   - test
   - build
   - package
   - deploy
 
+analyze_encoding_utf8:
+  stage: prepare
+  image: nas.markany.wm/docker/ci-checkfiles
+  script:
+    - checkEncoding utf-8 *.md *.java *.xml *.json *.ts *.js *.h *.hpp *.c *.cpp *.html *.go
+  tags:
+    - linux
+    
+fmt:
+  image: nas.markany.wm/docker/go-checkfmt
+  stage: prepare
+  script: 
+    - chkfmt
+  tags:
+    - linux
+    
 format:
   stage: test
   script:
     - go fmt $(go list ./... | grep -v /vendor/)
     - go vet $(go list ./... | grep -v /vendor/)
+    - go test -short $(go list ./... | grep -v /vendor/)
   tags:
     - linux
     
