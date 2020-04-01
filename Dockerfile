@@ -23,8 +23,8 @@ RUN apk --no-cache add ca-certificates
 RUN mkdir /app
 WORKDIR /app
 # COPY --from=builder /app/cleaner-linux-amd64 .
-COPY cleaner-linux-amd64 .
+COPY cleaner .
 
 RUN mkdir /data
-ENTRYPOINT ["./cleaner-linux-amd64"]
-CMD ["--vod_path=/data", "--image_path=/image"]
+ENTRYPOINT ["./cleaner"]
+#CMD ["--vod_path=/data", "--image_path=/image"]
