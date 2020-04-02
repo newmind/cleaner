@@ -10,10 +10,11 @@ import (
 )
 import "github.com/stretchr/testify/assert"
 
-const root string = "../test/vods"
+const rootVod string = "../test/vods"
+const rootImage string = "../test/images"
 
 func init() {
-	_ = os.Mkdir(root, os.ModePerm)
+	_ = os.Mkdir(rootVod, os.ModePerm)
 }
 
 type TestVODInfo struct {
@@ -50,12 +51,12 @@ func generateTestVOD(root string, id string, jsonVodTree string) (error, *TestVO
 }
 
 func TestListAllVODs(t *testing.T) {
-	os.RemoveAll(root)
+	os.RemoveAll(rootVod)
 	time.Sleep(time.Millisecond * 10)
-	os.Mkdir(root, os.ModePerm)
+	os.Mkdir(rootVod, os.ModePerm)
 	time.Sleep(time.Millisecond * 10)
 
-	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
+	_, v1 := generateTestVOD(rootVod, "1-0-0", `{"years": 
 		{"2020":{ "1":[13,14,15],
 				  "2":[1,2,3,4,5,6,7,8,9]
 		 	    }
@@ -65,7 +66,7 @@ func TestListAllVODs(t *testing.T) {
 		defer v1.deleteLocal()
 	}
 
-	_, v2 := generateTestVOD(root, "776-0-0", `{"years": 
+	_, v2 := generateTestVOD(rootVod, "776-0-0", `{"years": 
         {"2020":{ "2":[17,18,19],
 				  "3":[1,2,3,4,5,6,7,8,9]
 			    }
@@ -75,7 +76,7 @@ func TestListAllVODs(t *testing.T) {
 		defer v2.deleteLocal()
 	}
 
-	_, v3 := generateTestVOD(root, "2-0-0", `{"years": {
+	_, v3 := generateTestVOD(rootVod, "2-0-0", `{"years": {
 		"2020":{ "1":[17,18,19],
 				 "2":[1,2,3,4,5,6,7,8,9]
 			   }
@@ -85,7 +86,7 @@ func TestListAllVODs(t *testing.T) {
 		defer v3.deleteLocal()
 	}
 
-	list := ListAllVODs(root)
+	list := ListAllVODs(rootVod)
 	assert.Equal(t, 3, len(list))
 	t.Log(list)
 	//
@@ -103,10 +104,10 @@ func TestListAllVODs(t *testing.T) {
 }
 
 func TestGetOldestVOD(t *testing.T) {
-	os.RemoveAll(root)
-	os.Mkdir(root, os.ModePerm)
+	os.RemoveAll(rootVod)
+	os.Mkdir(rootVod, os.ModePerm)
 
-	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
+	_, v1 := generateTestVOD(rootVod, "1-0-0", `{"years": 
 		{"2020":{ "1":[13,14,15],
 				  "2":[1,2,3,4,5,6,7,8,9]
 		 	    }
@@ -116,7 +117,7 @@ func TestGetOldestVOD(t *testing.T) {
 		defer v1.deleteLocal()
 	}
 
-	list := ListAllVODs(root)
+	list := ListAllVODs(rootVod)
 	found, y, m, d := list[0].GetOldestDay()
 	t.Log(found, y, m, d)
 	assert.Equal(t, 2020, y)
@@ -125,10 +126,10 @@ func TestGetOldestVOD(t *testing.T) {
 }
 
 func TestDeleteOldestVOD(t *testing.T) {
-	os.RemoveAll(root)
-	os.Mkdir(root, os.ModePerm)
+	os.RemoveAll(rootVod)
+	os.Mkdir(rootVod, os.ModePerm)
 
-	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
+	_, v1 := generateTestVOD(rootVod, "1-0-0", `{"years": 
 		{"2020":{ "1":[13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31],
 				  "2":[1,2,3,4,5,6,7,8,9]
 		 	    }
@@ -138,7 +139,7 @@ func TestDeleteOldestVOD(t *testing.T) {
 		defer v1.deleteLocal()
 	}
 
-	list := ListAllVODs(root)
+	list := ListAllVODs(rootVod)
 
 	// 하루치 삭제
 	list[0].DeleteOldestDay(true)
@@ -162,18 +163,18 @@ func TestDeleteOldestVOD(t *testing.T) {
 	assert.Equal(t, 1, d)
 
 	// reload list from disk
-	list2 := ListAllVODs(root)
+	list2 := ListAllVODs(rootVod)
 	assert.Equal(t, list2, list, "should be equal, after reloading")
 }
 
 func TestEmptyRoot(t *testing.T) {
-	os.RemoveAll(root)
-	list := ListAllVODs(root)
+	os.RemoveAll(rootVod)
+	list := ListAllVODs(rootVod)
 	assert.Len(t, list, 0)
 	assert.NotNil(t, list)
 
-	_ = os.Mkdir(root, os.ModePerm)
-	list = ListAllVODs(root)
+	_ = os.Mkdir(rootVod, os.ModePerm)
+	list = ListAllVODs(rootVod)
 	assert.Len(t, list, 0)
 	assert.NotNil(t, list)
 
@@ -182,7 +183,7 @@ func TestEmptyRoot(t *testing.T) {
 	assert.NotNil(t, oldestCCTV)
 
 	// 비어있는 달,일 체크
-	err, v1 := generateTestVOD(root, "1-0-0", `{"years": 
+	err, v1 := generateTestVOD(rootVod, "1-0-0", `{"years": 
 		{
          "2018":{},
 		 "2020":{ "1":[]
@@ -195,17 +196,17 @@ func TestEmptyRoot(t *testing.T) {
 	if v1 != nil {
 		defer v1.deleteLocal()
 	}
-	list = ListAllVODs(root)
+	list = ListAllVODs(rootVod)
 	found, y, m, d := list[0].GetOldestDay()
 	t.Log(found, y, m, d)
 	assert.False(t, found)
 }
 
 func TestEmptyDir(t *testing.T) {
-	os.RemoveAll(root)
-	os.Mkdir(root, os.ModePerm)
+	os.RemoveAll(rootVod)
+	os.Mkdir(rootVod, os.ModePerm)
 
-	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
+	_, v1 := generateTestVOD(rootVod, "1-0-0", `{"years": 
 		{"2020":{ "1":[],
 				  "2":[1,2,3,4,5,6,7,8,9]
 		 	    }
@@ -215,7 +216,7 @@ func TestEmptyDir(t *testing.T) {
 		defer v1.deleteLocal()
 	}
 
-	list := ListAllVODs(root)
+	list := ListAllVODs(rootVod)
 
 	// 비어있는 폴더는 제외하는지 체크
 	found, y, m, d := list[0].GetOldestDay()
@@ -225,7 +226,7 @@ func TestEmptyDir(t *testing.T) {
 	assert.Equal(t, 1, d)
 
 	// 비어있는 달,일 체크
-	_, v1 = generateTestVOD(root, "1-0-0", `{"years": 
+	_, v1 = generateTestVOD(rootVod, "1-0-0", `{"years": 
 		{
          "2018":{},
 		 "2019":{ "11":[],
@@ -247,10 +248,10 @@ func TestEmptyDir(t *testing.T) {
 }
 
 func TestMonthChanged(t *testing.T) {
-	os.RemoveAll(root)
-	os.Mkdir(root, os.ModePerm)
+	os.RemoveAll(rootVod)
+	os.Mkdir(rootVod, os.ModePerm)
 
-	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
+	_, v1 := generateTestVOD(rootVod, "1-0-0", `{"years": 
 		{"2020":{ "1":[31],
 				  "2":[1,2,3,4,5,6,7,8,9]
 		 	    }
@@ -260,7 +261,7 @@ func TestMonthChanged(t *testing.T) {
 		defer v1.deleteLocal()
 	}
 
-	list := ListAllVODs(root)
+	list := ListAllVODs(rootVod)
 
 	// 하루치 삭제
 	list[0].DeleteOldestDay(true)
@@ -273,10 +274,10 @@ func TestMonthChanged(t *testing.T) {
 }
 
 func TestYearChanged(t *testing.T) {
-	os.RemoveAll(root)
-	os.Mkdir(root, os.ModePerm)
+	os.RemoveAll(rootVod)
+	os.Mkdir(rootVod, os.ModePerm)
 
-	_, v1 := generateTestVOD(root, "1-0-0", `{"years": 
+	_, v1 := generateTestVOD(rootVod, "1-0-0", `{"years": 
 		{
 		 "2019":{ "11":[],
 				  "12":[31]
@@ -290,7 +291,7 @@ func TestYearChanged(t *testing.T) {
 		defer v1.deleteLocal()
 	}
 
-	list := ListAllVODs(root)
+	list := ListAllVODs(rootVod)
 
 	// 하루치 삭제
 	list[0].DeleteOldestDay(true)
@@ -302,16 +303,16 @@ func TestYearChanged(t *testing.T) {
 	assert.Equal(t, 13, d)
 
 	// reload
-	list2 := ListAllVODs(root)
+	list2 := ListAllVODs(rootVod)
 	assert.Equal(t, list2, list, "should be equal, after reloading")
 }
 
 func TestListOldestCCTV(t *testing.T) {
-	os.RemoveAll(root)
-	os.Mkdir(root, os.ModePerm)
+	os.RemoveAll(rootVod)
+	os.Mkdir(rootVod, os.ModePerm)
 
 	// 순차적으로 여러버 테스트
-	err, v1 := generateTestVOD(root, "1-0-0", `{"years": 
+	err, v1 := generateTestVOD(rootVod, "1-0-0", `{"years": 
 		{"2020":{ "1":[13,14,15],
 				  "2":[1,2,3,4,5,6,7,8,9]
 		 	    }
@@ -324,7 +325,7 @@ func TestListOldestCCTV(t *testing.T) {
 		defer v1.deleteLocal()
 	}
 
-	err, v2 := generateTestVOD(root, "2-0-0", `{"years": 
+	err, v2 := generateTestVOD(rootVod, "2-0-0", `{"years": 
 		{"2019":{ "12":[15]
                 },
 		 "2020":{ "1":[13,14,15],
@@ -339,7 +340,7 @@ func TestListOldestCCTV(t *testing.T) {
 		defer v2.deleteLocal()
 	}
 
-	err, v3 := generateTestVOD(root, "3-0-0", `{"years": 
+	err, v3 := generateTestVOD(rootVod, "3-0-0", `{"years": 
 		{"2020":{ "1":[13,14,15],
 				  "2":[1,2,3,4,5,6,7,8,9]
 		 	    }
@@ -352,7 +353,7 @@ func TestListOldestCCTV(t *testing.T) {
 		defer v3.deleteLocal()
 	}
 
-	list := ListAllVODs(root)
+	list := ListAllVODs(rootVod)
 
 	// get
 	oldestCCTVs := ListOldestCCTV(list)
@@ -382,6 +383,10 @@ func TestListOldestCCTV(t *testing.T) {
 	assert.Equal(t, 13, d)
 
 	// after reloading
-	list2 := ListAllVODs(root)
+	list2 := ListAllVODs(rootVod)
 	assert.Equal(t, list2, list, "should be equal after reload")
+}
+
+func TestListAllImages(t *testing.T) {
+
 }

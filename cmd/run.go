@@ -269,28 +269,28 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 	}
 
 	var allVodList []*vods.VodInfo = nil
-	var allImageList []*vods.VodInfo = nil
+	var allImageList []*vods.ImageInfo = nil
 
 	for _, info := range pathInfos {
 		switch info.Type {
 		case PathTypeVOD:
 			allVodList = vods.ListAllVODs(info.Path)
 		case PathTypeImage:
-			allImageList = vods.ListAllVODs(info.Path)
+			allImageList = vods.ListAllImages(info.Path)
 		}
 	}
 
 	for usage.UsedPercent+float64(freePercent) >= 100 {
 
 		var oldVodInfos []*vods.VodInfo = nil
-		var oldImageInfos []*vods.VodInfo = nil
+		var oldImageInfos []*vods.ImageInfo = nil
 
 		for _, info := range pathInfos {
 			switch info.Type {
 			case PathTypeVOD:
 				oldVodInfos = vods.ListOldestCCTV(allVodList)
 			case PathTypeImage:
-				oldImageInfos = vods.ListOldestCCTV(allImageList)
+				oldImageInfos = allImageList
 			}
 		}
 
