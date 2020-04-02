@@ -46,7 +46,7 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "run cleaner",
 	Run: func(cmd *cobra.Command, args []string) {
-		viper.BindPFlags(cmd.Flags())
+		_ = viper.BindPFlags(cmd.Flags())
 		run()
 	},
 }
@@ -71,8 +71,8 @@ func init() {
 	runCmd.Flags().BoolVar(&debug, "debug", true, "use debug logging mode")
 	runCmd.Flags().StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
 	runCmd.Flags().StringVar(&serverPort, "server_port", "8889", "http port")
-	runCmd.Flags().StringVar(&vodPath, "vod_path", "", "vod path (required)")
-	runCmd.Flags().StringVar(&imagePath, "image_path", "", "image path (required)")
+	runCmd.Flags().StringVar(&vodPath, "vod_path", "/vods", "vod path (required)")
+	runCmd.Flags().StringVar(&imagePath, "image_path", "/images", "image path (required)")
 	runCmd.Flags().BoolVar(&allowRamDisk, "allow_ramdisk", false, "scan RAM disk")
 }
 
@@ -179,8 +179,10 @@ func run() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
+		err = pprof.StartCPUProfile(f)
+		if err == nil {
+			defer pprof.StopCPUProfile()
+		}
 	}
 
 	log.Infof("Starting %v (debug=%v, dryRun=%v)...", appName, viper.GetBool("DEBUG"), viper.GetBool("DRY_RUN"))
