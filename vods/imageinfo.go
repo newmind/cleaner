@@ -50,6 +50,17 @@ func (p *ImageInfo) GetOldestDay() (found bool, year int, month int, day int) {
 	return
 }
 
+func (p *ImageInfo) GetOldestDay2() (found bool, dateUTC time.Time) {
+	if len(p.list) <= 0 {
+		return
+	}
+
+	p.SortByDateDesc()
+	found = true
+	oldestTime := p.list[len(p.list)-1].modTime
+	return found, oldestTime.UTC()
+}
+
 func (p *ImageInfo) DeleteOldestDay(deleteLocalDir bool) {
 	p.SortByDateDesc()
 	found, year, month, day := p.GetOldestDay()

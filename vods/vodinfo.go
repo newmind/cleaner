@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"gitlab.markany.com/argos/cleaner/common"
@@ -161,6 +162,11 @@ func (p *VodInfo) GetOldestDay() (found bool, year int, month int, day int) {
 		}
 	}
 	return
+}
+
+func (p *VodInfo) GetOldestDay2() (found bool, dateUTC time.Time) {
+	found, year, month, day := p.GetOldestDay()
+	return found, time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.Local).UTC()
 }
 
 func (p *VodInfo) DeleteOldestDay(deleteLocalDir bool) {

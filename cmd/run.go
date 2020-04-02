@@ -30,6 +30,7 @@ var (
 	deleteEmptyDir bool
 	deleteHidden   bool // dot(.) 파일/디렉토리 삭제할지, (default : false)
 	interval       string
+	retentionDays  int // 데이터 유지기간 (days)
 	freePercent    int // 여유공간 몇퍼센트 유지할지
 	dryRun         bool
 	debug          bool
@@ -66,6 +67,7 @@ func init() {
 	runCmd.Flags().BoolVar(&deleteEmptyDir, "delete_empty_dir", true, "delete empty dir")
 	runCmd.Flags().BoolVar(&deleteHidden, "delete_hidden", false, "delete .(dot) files or dirs")
 	runCmd.Flags().StringVar(&interval, "interval", "1m", "poll interval to check free-space")
+	runCmd.Flags().IntVar(&retentionDays, "retention_days", 30, "Retention days")
 	runCmd.Flags().IntVar(&freePercent, "free_percent", 10, "Keep free percent")
 	runCmd.Flags().BoolVar(&dryRun, "dry_run", true, "dry run")
 	runCmd.Flags().BoolVar(&debug, "debug", true, "use debug logging mode")
@@ -263,15 +265,9 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 	isRunning.Set(true)
 	defer isRunning.Set(false)
 
+	retentionDays := viper.GetInt("RETENTION_DAYS")
 	freePercent := viper.GetInt("FREE_PERCENT")
 	dryRun := viper.GetBool("DRY_RUN")
-
-	usage, err := disk.Usage(partition)
-	if err != nil {
-		log.Fatal(err)
-		panic(err)
-	}
-	log.Debug(usage)
 
 	var allVodList []*vods.VodInfo = nil
 	var allImageList []*vods.ImageInfo = nil
@@ -284,6 +280,37 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 			allImageList = vods.ListAllImages(info.Path)
 		}
 	}
+
+	// 1. retentionDays 보다 오래된것 제거
+	nowUTC := time.Now().UTC()
+	for _, vodInfo := range allVodList {
+		for {
+			found, dateUTC := vodInfo.GetOldestDay2()
+			if found && dateUTC.Before(nowUTC.Add(-time.Hour*24*time.Duration(retentionDays))) {
+				vodInfo.DeleteOldestDay(!dryRun)
+			} else {
+				break
+			}
+		}
+	}
+	for _, imageInfo := range allImageList {
+		for {
+			found, dateUTC := imageInfo.GetOldestDay2()
+			if found && dateUTC.Before(nowUTC.Add(-time.Hour*24*time.Duration(retentionDays))) {
+				imageInfo.DeleteOldestDay(!dryRun)
+			} else {
+				break
+			}
+		}
+	}
+
+	// 2. disk 용량 기준 정리ㅣㅣ
+	usage, err := disk.Usage(partition)
+	if err != nil {
+		log.Fatal(err)
+		panic(err)
+	}
+	log.Debug(usage)
 
 	for usage.UsedPercent+float64(freePercent) >= 100 {
 
