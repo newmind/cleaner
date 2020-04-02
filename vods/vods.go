@@ -64,7 +64,7 @@ func ListAllImages(root string) (list []*ImageInfo) {
 	list = []*ImageInfo{}
 
 	if _, err := os.Stat(root); err != nil && os.IsNotExist(err) {
-		log.Warn("images directory doesn't exist : ", root)
+		log.Warnf("%s directory does not exist : ", root)
 		return
 	}
 
