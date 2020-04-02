@@ -322,7 +322,7 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 		} else if foundImage {
 			oldImageInfos[0].DeleteOldestDay(!dryRun)
 		} else {
-			log.Warnf("Could not free up disk [%s]", partition)
+			log.Warnf("Could not free up disk [%s], /vods 또는 /images 에 지울 파일은 없으나 공간은 부족함. 디스크 확인 요망", partition)
 			break
 		}
 

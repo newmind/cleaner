@@ -85,7 +85,7 @@ func ListAllImages(root string) (list []*ImageInfo) {
 		if os.IsNotExist(err) {
 			continue
 		}
-		imageInfo.Add(e, info.ModTime())
+		imageInfo.AddToLast(e, info.ModTime())
 	}
 	imageInfo.SortByDateDesc()
 

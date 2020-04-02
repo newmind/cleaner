@@ -10,7 +10,9 @@ import (
 
 type ImageInfo struct {
 	path string
-	list []imageItem // sorted by date DESC
+	list []imageItem // AddToLast 이후에 정렬해야함(sorted by date DESC)
+
+	modifiedForSorting bool
 }
 
 type imageItem struct {
@@ -38,6 +40,8 @@ func (p *ImageInfo) GetOldestDay() (found bool, year int, month int, day int) {
 		return
 	}
 
+	p.SortByDateDesc()
+
 	oldestTime := p.list[len(p.list)-1].modTime
 	found = true
 	year = oldestTime.Year()
@@ -47,6 +51,7 @@ func (p *ImageInfo) GetOldestDay() (found bool, year int, month int, day int) {
 }
 
 func (p *ImageInfo) DeleteOldestDay(deleteLocalDir bool) {
+	p.SortByDateDesc()
 	found, year, month, day := p.GetOldestDay()
 	if !found {
 		return
@@ -71,7 +76,7 @@ func (p *ImageInfo) DeleteOldestDay(deleteLocalDir bool) {
 	}
 }
 
-func (p *ImageInfo) Add(filename string, modTime time.Time) {
+func (p *ImageInfo) AddToLast(filename string, modTime time.Time) {
 	p.list = append(p.list, imageItem{
 		filename: filename,
 		modTime:  modTime,
@@ -79,10 +84,14 @@ func (p *ImageInfo) Add(filename string, modTime time.Time) {
 		m:        int(modTime.Month()),
 		d:        modTime.Day(),
 	})
+	p.modifiedForSorting = true
 }
 
 func (p *ImageInfo) SortByDateDesc() {
-	sort.Slice(p.list, func(i, j int) bool {
-		return p.list[i].modTime.After(p.list[j].modTime)
-	})
+	if p.modifiedForSorting {
+		sort.Slice(p.list, func(i, j int) bool {
+			return p.list[i].modTime.After(p.list[j].modTime)
+		})
+		p.modifiedForSorting = false
+	}
 }
