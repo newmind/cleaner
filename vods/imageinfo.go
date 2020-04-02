@@ -19,6 +19,12 @@ type imageItem struct {
 	y, m, d  int
 }
 
+func NewImageInfo(root string) *ImageInfo {
+	return &ImageInfo{
+		path: root,
+	}
+}
+
 func (p *ImageInfo) String() string {
 	return p.path
 }

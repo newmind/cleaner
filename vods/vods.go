@@ -91,9 +91,3 @@ func ListAllImages(root string) (list []*ImageInfo) {
 
 	return
 }
-
-func NewImageInfo(root string) *ImageInfo {
-	return &ImageInfo{
-		path: root,
-	}
-}
