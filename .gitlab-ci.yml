@@ -1,0 +1,88 @@
+image: golang:1.13
+
+variables:
+  REPO_NAME: gitlab.markany.wm/argos/cleaner
+
+before_script:
+  - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
+  - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
+  - cd $GOPATH/src/$REPO_NAME
+
+stages:
+  - prepare
+  - test
+  - build
+  - package
+  - deploy
+
+analyze_encoding_utf8:
+  stage: prepare
+  image: nas.markany.wm/docker/ci-checkfiles
+  script:
+    - checkEncoding utf-8 *.md *.java *.xml *.json *.ts *.js *.h *.hpp *.c *.cpp *.html *.go
+  tags:
+    - linux
+    
+fmt:
+  image: nas.markany.wm/docker/go-checkfmt
+  stage: prepare
+  script: 
+    - chkfmt
+  tags:
+    - linux
+    
+format:
+  stage: test
+  script:
+    - go fmt $(go list ./... | grep -v /vendor/)
+    - go vet $(go list ./... | grep -v /vendor/)
+    - mkdir test
+    - go test -short $(go list ./... | grep -v /vendor/)
+  tags:
+    - linux
+    
+compile:
+  stage: build
+  variables:
+    GOOS: "linux"
+    GOARCH: "amd64"
+    GO111MODULE: 'on'
+    CGO_ENABLED: "0"
+  artifacts:
+    name: $CI_PROJECT_NAME-sync-$CI_COMMIT_REF_NAME-$GOOS-$GOARCH
+    expire_in: 6 week
+    paths:
+      - cleaner
+  script:
+    - wget 192.168.1.115/ca-cert-markany.pem -O ~/ca-cert-markany.pem
+    - wget 192.168.1.115/ca-cert-markany.pem -O /etc/ssl/certs/ca-cert-markany.pem
+    - wget 192.168.1.115/ca-cert-markany.pem -O /usr/local/share/ca-certificates/ca-cert-markany.pem
+    - git config --global http.https://gitlab.markany.wm/.sslcainfo "~/ca-cert-markany.pem"
+    - export PATH=$PATH:$GOPATH/bin
+    - go build -ldflags -s -o $CI_PROJECT_DIR/cleaner
+  tags:
+    - linux
+    
+build_docker:
+  image: docker:latest
+  stage: package
+  artifacts:
+    name: $CI_PROJECT_NAME-docker-$CI_COMMIT_REF_NAME-$GOOS-$GOARCH
+    expire_in: 6 week
+    paths:
+      - $CI_PROJECT_NAME.tar.gz
+  dependencies:
+    - compile
+  services:
+    - name: docker:dind
+      command: ["--insecure-registry=nas.markany.wm"]
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker build --pull --cache-from "${CI_REGISTRY_IMAGE}:latest" --tag "${CI_REGISTRY_IMAGE}:latest" .
+    - docker tag "${CI_REGISTRY_IMAGE}:latest" "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}"
+    - test ! -z "${CI_COMMIT_TAG}" && docker push "${CI_REGISTRY_IMAGE}:latest"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}"
+    - docker tag "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}" ${CI_PROJECT_NAME}
+    - docker save "${CI_PROJECT_NAME}" "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}" | gzip -c > "${CI_PROJECT_NAME}.tar.gz"
+  tags:
+    - linux
