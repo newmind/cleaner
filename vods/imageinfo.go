@@ -55,7 +55,8 @@ func (p *ImageInfo) DeleteOldestDay(deleteLocalDir bool) {
 	for i := len(p.list) - 1; i >= 0; i-- {
 		item := p.list[i]
 
-		if year == item.y && month == item.y && day == item.d {
+		if year == item.y && month == item.m && day == item.d {
+			log.Debugf("Delete old image [%d_%d_%d] %s", year, month, day, item.filename)
 			p.list = p.list[:i]
 
 			if deleteLocalDir {

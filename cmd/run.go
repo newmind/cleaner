@@ -36,6 +36,7 @@ var (
 	serverPort     string
 	vodPath        string
 	imagePath      string
+	allowRamDisk   bool // 파티션 검색시  램디스크도 검색할지
 
 	cpuprofile string
 )
@@ -69,9 +70,10 @@ func init() {
 	runCmd.Flags().BoolVar(&dryRun, "dry_run", true, "dry run")
 	runCmd.Flags().BoolVar(&debug, "debug", true, "use debug logging mode")
 	runCmd.Flags().StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
-	runCmd.Flags().StringVar(&serverPort, "server_port", "8089", "http port")
+	runCmd.Flags().StringVar(&serverPort, "server_port", "8889", "http port")
 	runCmd.Flags().StringVar(&vodPath, "vod_path", "", "vod path (required)")
 	runCmd.Flags().StringVar(&imagePath, "image_path", "", "image path (required)")
+	runCmd.Flags().BoolVar(&allowRamDisk, "allow_ramdisk", false, "scan RAM disk")
 }
 
 func loadConfig() {
@@ -184,7 +186,7 @@ func run() {
 	log.Infof("Starting %v (debug=%v, dryRun=%v)...", appName, viper.GetBool("DEBUG"), viper.GetBool("DRY_RUN"))
 
 	log.Info("All partitions : ")
-	partitions, err := diskinfo.GetAllPartitions()
+	partitions, err := diskinfo.GetAllPartitions(viper.GetBool("ALLOW_RAMDISK"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -267,6 +269,7 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 		log.Fatal(err)
 		panic(err)
 	}
+	log.Debug(usage)
 
 	var allVodList []*vods.VodInfo = nil
 	var allImageList []*vods.ImageInfo = nil

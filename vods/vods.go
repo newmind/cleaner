@@ -78,7 +78,7 @@ func ListAllImages(root string) (list []*ImageInfo) {
 	list = append(list, imageInfo)
 
 	for _, e := range matches {
-		if !common.IsDir(e) {
+		if common.IsDir(e) {
 			continue
 		}
 		info, err := os.Stat(e)

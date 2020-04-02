@@ -1,4 +1,4 @@
-executable := cleaner-linux-amd64
+executable := cleaner
 
 build:
 	@echo Building $(executable)
