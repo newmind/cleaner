@@ -12,6 +12,7 @@ import (
 func ListAllVODs(root string) (list []*VodInfo) {
 	list = []*VodInfo{}
 	if _, err := os.Stat(root); err != nil && os.IsNotExist(err) {
+		log.Warn("vods directory doesn't exist : ", root)
 		return
 	}
 
@@ -57,4 +58,42 @@ func ListOldestCCTV(list []*VodInfo) (result []*VodInfo) {
 		}
 	}
 	return
+}
+
+func ListAllImages(root string) (list []*ImageInfo) {
+	list = []*ImageInfo{}
+
+	if _, err := os.Stat(root); err != nil && os.IsNotExist(err) {
+		log.Warn("images directory doesn't exist : ", root)
+		return
+	}
+
+	matches, err := filepath.Glob(filepath.Join(root, "*.jpg"))
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	imageInfo := NewImageInfo(root)
+	list = append(list, imageInfo)
+
+	for _, e := range matches {
+		if !common.IsDir(e) {
+			continue
+		}
+		info, err := os.Stat(e)
+		if os.IsNotExist(err) {
+			continue
+		}
+		imageInfo.Add(e, info.ModTime())
+	}
+	imageInfo.SortByDateDesc()
+
+	return
+}
+
+func NewImageInfo(root string) *ImageInfo {
+	return &ImageInfo{
+		path: root,
+	}
 }
