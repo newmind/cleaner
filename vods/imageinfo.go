@@ -10,7 +10,7 @@ import (
 
 type ImageInfo struct {
 	path string
-	list []imageItem // AddToLast 이후에 정렬해야함(sorted by date DESC)
+	list []imageItem // add 이후에 정렬해야함(sorted by date DESC)
 
 	modifiedForSorting bool
 }
@@ -76,7 +76,7 @@ func (p *ImageInfo) DeleteOldestDay(deleteLocalDir bool) {
 	}
 }
 
-func (p *ImageInfo) AddToLast(filename string, modTime time.Time) {
+func (p *ImageInfo) add(filename string, modTime time.Time) {
 	p.list = append(p.list, imageItem{
 		filename: filename,
 		modTime:  modTime,
