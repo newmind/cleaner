@@ -164,9 +164,17 @@ func (p *VodInfo) GetOldestDay() (found bool, year int, month int, day int) {
 	return
 }
 
-func (p *VodInfo) GetOldestDay2() (found bool, dateUTC time.Time) {
+func (p *VodInfo) GetOldestDateUTC() (found bool, dateUTC time.Time) {
 	found, year, month, day := p.GetOldestDay()
-	return found, time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.Local).UTC()
+	if !found {
+		return
+	}
+	if p.utc {
+		dateUTC = time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+	} else {
+		dateUTC = time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.Local).UTC()
+	}
+	return
 }
 
 func (p *VodInfo) DeleteOldestDay(deleteLocalDir bool) {

@@ -16,20 +16,32 @@ func ListAllVODs(root string) (list []*VodInfo) {
 		return
 	}
 
-	matches, err := filepath.Glob(filepath.Join(root, "*-0-0"))
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	for _, e := range matches {
-		if !common.IsDir(e) {
-			continue
-		}
-		vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e))
-		vodInfo.FillTree()
+	matches, err := filepath.Glob(filepath.Join(root, "UTC", "*-0-0"))
+	if err == nil {
+		for _, e := range matches {
+			if !common.IsDir(e) {
+				continue
+			}
+			vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e), true)
+			vodInfo.FillTree()
 
-		list = append(list, vodInfo)
+			list = append(list, vodInfo)
+		}
 	}
+
+	matches, err = filepath.Glob(filepath.Join(root, "*-0-0"))
+	if err == nil {
+		for _, e := range matches {
+			if !common.IsDir(e) {
+				continue
+			}
+			vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e), false)
+			vodInfo.FillTree()
+
+			list = append(list, vodInfo)
+		}
+	}
+
 	sort.Slice(list, func(i, j int) bool {
 		return list[i].intId < list[j].intId
 	})

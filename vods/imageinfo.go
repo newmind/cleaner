@@ -50,7 +50,7 @@ func (p *ImageInfo) GetOldestDay() (found bool, year int, month int, day int) {
 	return
 }
 
-func (p *ImageInfo) GetOldestDay2() (found bool, dateUTC time.Time) {
+func (p *ImageInfo) GetOldestDateUTC() (found bool, dateUTC time.Time) {
 	if len(p.list) <= 0 {
 		return
 	}

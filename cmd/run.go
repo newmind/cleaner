@@ -285,7 +285,7 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 	nowUTC := time.Now().UTC()
 	for _, vodInfo := range allVodList {
 		for {
-			found, dateUTC := vodInfo.GetOldestDay2()
+			found, dateUTC := vodInfo.GetOldestDateUTC()
 			if found && dateUTC.Before(nowUTC.Add(-time.Hour*24*time.Duration(retentionDays))) {
 				vodInfo.DeleteOldestDay(!dryRun)
 			} else {
@@ -295,7 +295,7 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 	}
 	for _, imageInfo := range allImageList {
 		for {
-			found, dateUTC := imageInfo.GetOldestDay2()
+			found, dateUTC := imageInfo.GetOldestDateUTC()
 			if found && dateUTC.Before(nowUTC.Add(-time.Hour*24*time.Duration(retentionDays))) {
 				imageInfo.DeleteOldestDay(!dryRun)
 			} else {
@@ -304,7 +304,7 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 		}
 	}
 
-	// 2. disk 용량 기준 정리ㅣㅣ
+	// 2. disk 용량 기준 정리
 	usage, err := disk.Usage(partition)
 	if err != nil {
 		log.Fatal(err)
