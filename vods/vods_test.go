@@ -309,7 +309,7 @@ func TestYearChanged(t *testing.T) {
 	assert.Equal(t, list2, list, "should be equal, after reloading")
 }
 
-func TestListOldestCCTV(t *testing.T) {
+func TestFilterOldestDay(t *testing.T) {
 	os.RemoveAll(rootVod)
 	os.Mkdir(rootVod, os.ModePerm)
 
@@ -387,8 +387,4 @@ func TestListOldestCCTV(t *testing.T) {
 	// after reloading
 	list2 := ListAllVODs(rootVod)
 	assert.Equal(t, list2, list, "should be equal after reload")
-}
-
-func TestListAllImages(t *testing.T) {
-
 }

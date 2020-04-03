@@ -24,7 +24,8 @@ RUN mkdir /app
 WORKDIR /app
 # COPY --from=builder /app/cleaner-linux-amd64 .
 COPY cleaner .
-
+RUN chmod +x cleaner
 RUN mkdir /data
-ENTRYPOINT ["./cleaner"]
+# ENTRYPOINT ["./cleaner"] 
+CMD ["/app/cleaner"]
 #CMD ["--vod_path=/data", "--image_path=/image"]
