@@ -267,7 +267,7 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 	freePercent := viper.GetInt("FREE_PERCENT")
 	dryRun := viper.GetBool("DRY_RUN")
 
-	var allVodList []common.ICommonDeleter = nil
+	var allVodList []vods.ICommonDeleter = nil
 
 	for _, info := range pathInfos {
 		switch info.Type {
@@ -314,7 +314,7 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 	}
 }
 
-func deleteOlderThan(allVodList []common.ICommonDeleter, retentionDays int, dryRun bool) {
+func deleteOlderThan(allVodList []vods.ICommonDeleter, retentionDays int, dryRun bool) {
 	nowUTC := time.Now().UTC()
 	retentionDate := nowUTC.Add(-time.Hour * 24 * time.Duration(retentionDays))
 

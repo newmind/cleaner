@@ -9,8 +9,8 @@ import (
 	"gitlab.markany.com/argos/cleaner/common"
 )
 
-func ListAllVODs(root string) (list []common.ICommonDeleter) {
-	list = []common.ICommonDeleter{}
+func ListAllVODs(root string) (list []ICommonDeleter) {
+	list = []ICommonDeleter{}
 	if _, err := os.Stat(root); err != nil && os.IsNotExist(err) {
 		log.Warn("vods directory doesn't exist : ", root)
 		return
@@ -49,8 +49,8 @@ func ListAllVODs(root string) (list []common.ICommonDeleter) {
 }
 
 //FilterOldestDay : list 내에서 가장 오래된 날짜의 모든 목록 리턴
-func FilterOldestDay(list []common.ICommonDeleter) (result []common.ICommonDeleter) {
-	result = []common.ICommonDeleter{}
+func FilterOldestDay(list []ICommonDeleter) (result []ICommonDeleter) {
+	result = []ICommonDeleter{}
 	var (
 		minY = 9999
 		minM = 12 + 1
@@ -62,7 +62,7 @@ func FilterOldestDay(list []common.ICommonDeleter) (result []common.ICommonDelet
 			if y < minY ||
 				y <= minY && m < minM ||
 				y <= minY && m <= minM && d < minD {
-				result = []common.ICommonDeleter{info}
+				result = []ICommonDeleter{info}
 				minY, minM, minD = y, m, d
 			} else if y == minY && m == minM && d == minD {
 				result = append(result, info)
@@ -72,8 +72,8 @@ func FilterOldestDay(list []common.ICommonDeleter) (result []common.ICommonDelet
 	return
 }
 
-func ListAllImages(root string) (list []common.ICommonDeleter) {
-	list = []common.ICommonDeleter{}
+func ListAllImages(root string) (list []ICommonDeleter) {
+	list = []ICommonDeleter{}
 
 	if _, err := os.Stat(root); err != nil && os.IsNotExist(err) {
 		log.Warnf("%s directory does not exist : ", root)
