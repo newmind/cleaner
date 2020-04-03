@@ -119,6 +119,7 @@ func ListAllImages(root string) (list []ICommonDeleter) {
 	return
 }
 
+// DeleteOlderThan : retentionDays 보다 오래된 날짜를 지움. timezone 은 무시
 func DeleteOlderThan(allVodList []ICommonDeleter, retentionDays int, dryRun bool) {
 	nowUTC := time.Now().UTC()
 	retentionDate := nowUTC.Add(-time.Hour * 24 * time.Duration(retentionDays))
@@ -133,4 +134,18 @@ func DeleteOlderThan(allVodList []ICommonDeleter, retentionDays int, dryRun bool
 			}
 		}
 	}
+}
+
+func DeleteOldest(allVodList []ICommonDeleter, dryRun bool) (deleted bool) {
+	var oldInfos = FilterOldestDay(allVodList)
+
+	var found bool
+	if len(oldInfos) > 0 {
+		found, _, _, _ = oldInfos[0].GetOldestDay()
+		if found {
+			oldInfos[0].DeleteOldestDay(!dryRun)
+			return true
+		}
+	}
+	return
 }

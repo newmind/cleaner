@@ -285,23 +285,13 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 	// 2. disk 용량 기준 정리
 	usage, err := disk.Usage(partition)
 	if err != nil {
-		log.Fatal(err)
-		panic(err)
+		log.Error(err)
+		return
 	}
 	log.Debug(usage)
 
 	for usage.UsedPercent+float64(freePercent) >= 100 {
-
-		var oldVodInfos = vods.FilterOldestDay(allVodList)
-
-		var foundVod bool
-		if len(oldVodInfos) > 0 {
-			foundVod, _, _, _ = oldVodInfos[0].GetOldestDay()
-		}
-
-		if foundVod {
-			oldVodInfos[0].DeleteOldestDay(!dryRun)
-		} else {
+		if !vods.DeleteOldest(allVodList, dryRun) {
 			log.Warnf("Could not free up disk [%s], /vods 또는 /images 에 지울 파일은 없으나 공간은 부족함. 디스크 확인 요망", partition)
 			break
 		}
@@ -309,7 +299,8 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 		// 다시 계산
 		usage, err = disk.Usage(partition)
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
+			return
 		}
 	}
 }
