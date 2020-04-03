@@ -66,8 +66,8 @@ func uintToString(orig []uint8) string {
 	return string(ret[0:size])
 }
 
-func GetAllPartitions(allowRamdisk bool) ([]disk.PartitionStat, error) {
-	pp, err := disk.Partitions(allowRamdisk)
+func GetAllPartitions() ([]disk.PartitionStat, error) {
+	pp, err := disk.Partitions(true)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func GetAllPartitions(allowRamdisk bool) ([]disk.PartitionStat, error) {
 }
 
 func GetMountpoint(dir string) string {
-	pp, err := GetAllPartitions(false)
+	pp, err := GetAllPartitions()
 	if err != nil {
 		log.Error(err)
 		return ""

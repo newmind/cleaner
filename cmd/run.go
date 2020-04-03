@@ -37,7 +37,6 @@ var (
 	serverPort     string
 	vodPath        string
 	imagePath      string
-	allowRamDisk   bool // 파티션 검색시  램디스크도 검색할지
 
 	cpuprofile string
 )
@@ -75,7 +74,6 @@ func init() {
 	runCmd.Flags().StringVar(&serverPort, "server_port", "8889", "http port")
 	runCmd.Flags().StringVar(&vodPath, "vod_path", "/vods", "vod path (required)")
 	runCmd.Flags().StringVar(&imagePath, "image_path", "/images", "image path (required)")
-	runCmd.Flags().BoolVar(&allowRamDisk, "allow_ramdisk", false, "scan RAM disk")
 }
 
 func loadConfig() {
@@ -190,7 +188,7 @@ func run() {
 	log.Infof("Starting %v (debug=%v, dryRun=%v)...", appName, viper.GetBool("DEBUG"), viper.GetBool("DRY_RUN"))
 
 	log.Info("All partitions : ")
-	partitions, err := diskinfo.GetAllPartitions(viper.GetBool("ALLOW_RAMDISK"))
+	partitions, err := diskinfo.GetAllPartitions()
 	if err != nil {
 		log.Fatal(err)
 	}
