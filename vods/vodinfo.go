@@ -44,18 +44,24 @@ type VodInfo struct {
 	intId int
 
 	years []*Year
+	utc   bool
 }
 
 func (p *VodInfo) String() string {
 	return p.id
 }
 
-func NewVodInfo(root string, id string) *VodInfo {
+func (p *VodInfo) Id() int {
+	return p.intId
+}
+
+func NewVodInfo(root string, id string, isUTC bool) *VodInfo {
 	return &VodInfo{
 		path:  filepath.Join(root, id),
 		id:    id,
 		intId: common.Atoi(strings.Split(id, "-")[0], 0),
 		years: []*Year{},
+		utc:   isUTC,
 	}
 }
 
@@ -195,7 +201,7 @@ LOOP:
 	}
 
 	if found {
-		log.Debugf("Delete old vod [%s] %d-%d-%d", p.id, y, m, d)
+		log.Debugf("Delete dir [%s] %d/%d/%d %s(utc=%v)", p.id, y, m, d, p.path, p.utc)
 		// delete day
 		month := p.years[yIdx].months[mIdx]
 		month.deleteDayByIndex(dIdx)
@@ -222,6 +228,6 @@ LOOP:
 			}
 		}
 	} else {
-		log.Debugln("DeleteOldestDay : Not found")
+		log.Warnln("DeleteOldestDay : Not found")
 	}
 }

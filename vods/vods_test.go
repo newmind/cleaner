@@ -91,16 +91,18 @@ func TestListAllVODs(t *testing.T) {
 	t.Log(list)
 	//
 	firstCam := list[0]
-	assert.Equal(t, "1-0-0", firstCam.id)
-	assert.Equal(t, 2020, firstCam.years[0].y)
-	assert.Equal(t, 1, firstCam.years[0].months[0].m)
-	assert.Equal(t, 13, firstCam.years[0].months[0].days[0].d)
+	_, year, month, day := firstCam.GetOldestDay()
+	assert.Equal(t, "1-0-0", firstCam.String())
+	assert.Equal(t, 2020, year)
+	assert.Equal(t, 1, month)
+	assert.Equal(t, 13, day)
 
 	lastCam := list[len(list)-1]
-	assert.Equal(t, "776-0-0", lastCam.id)
-	assert.Equal(t, 2020, lastCam.years[0].y)
-	assert.Equal(t, 2, lastCam.years[0].months[0].m)
-	assert.Equal(t, 17, lastCam.years[0].months[0].days[0].d)
+	_, year, month, day = lastCam.GetOldestDay()
+	assert.Equal(t, "776-0-0", lastCam.String())
+	assert.Equal(t, 2020, year)
+	assert.Equal(t, 2, month)
+	assert.Equal(t, 17, day)
 }
 
 func TestGetOldestVOD(t *testing.T) {
@@ -178,7 +180,7 @@ func TestEmptyRoot(t *testing.T) {
 	assert.Len(t, list, 0)
 	assert.NotNil(t, list)
 
-	oldestCCTV := ListOldestCCTV(list)
+	oldestCCTV := FilterOldestDay(list)
 	assert.Len(t, oldestCCTV, 0)
 	assert.NotNil(t, oldestCCTV)
 
@@ -356,7 +358,7 @@ func TestListOldestCCTV(t *testing.T) {
 	list := ListAllVODs(rootVod)
 
 	// get
-	oldestCCTVs := ListOldestCCTV(list)
+	oldestCCTVs := FilterOldestDay(list)
 	assert.Equal(t, 1, len(oldestCCTVs), "length == 1")
 	_, y, m, d := oldestCCTVs[0].GetOldestDay()
 	assert.Equal(t, 2019, y)
@@ -367,7 +369,7 @@ func TestListOldestCCTV(t *testing.T) {
 	oldestCCTVs[0].DeleteOldestDay(true)
 
 	// get
-	oldestCCTVs = ListOldestCCTV(list)
+	oldestCCTVs = FilterOldestDay(list)
 	assert.Equal(t, 3, len(oldestCCTVs), "length == 3")
 	_, y, m, d = oldestCCTVs[0].GetOldestDay()
 	assert.Equal(t, 2020, y)
@@ -376,7 +378,7 @@ func TestListOldestCCTV(t *testing.T) {
 
 	// delete
 	oldestCCTVs[0].DeleteOldestDay(true)
-	oldestCCTVs = ListOldestCCTV(list)
+	oldestCCTVs = FilterOldestDay(list)
 	assert.Equal(t, 2, len(oldestCCTVs), "length == 2")
 	assert.Equal(t, 2020, y)
 	assert.Equal(t, 1, m)

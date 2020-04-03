@@ -9,8 +9,8 @@ import (
 	"gitlab.markany.com/argos/cleaner/common"
 )
 
-func ListAllVODs(root string) (list []*VodInfo) {
-	list = []*VodInfo{}
+func ListAllVODs(root string) (list []common.ICommonDeleter) {
+	list = []common.ICommonDeleter{}
 	if _, err := os.Stat(root); err != nil && os.IsNotExist(err) {
 		log.Warn("vods directory doesn't exist : ", root)
 		return
@@ -43,44 +43,59 @@ func ListAllVODs(root string) (list []*VodInfo) {
 	}
 
 	sort.Slice(list, func(i, j int) bool {
-		return list[i].intId < list[j].intId
+		return list[i].Id() < list[j].Id()
 	})
 	return
 }
 
-//ListOldestCCTV : list 내에서 가장 오래된 날짜의 모든 목록 리턴
-func ListOldestCCTV(list []*VodInfo) (result []*VodInfo) {
-	result = []*VodInfo{}
+//FilterOldestDay : list 내에서 가장 오래된 날짜의 모든 목록 리턴
+func FilterOldestDay(list []common.ICommonDeleter) (result []common.ICommonDeleter) {
+	result = []common.ICommonDeleter{}
 	var (
 		minY = 9999
 		minM = 12 + 1
 		minD = 31 + 1
 	)
-	for _, cctv := range list {
-		found, y, m, d := cctv.GetOldestDay()
+	for _, info := range list {
+		found, y, m, d := info.GetOldestDay()
 		if found {
 			if y < minY ||
 				y <= minY && m < minM ||
 				y <= minY && m <= minM && d < minD {
-				result = []*VodInfo{cctv}
+				result = []common.ICommonDeleter{info}
 				minY, minM, minD = y, m, d
 			} else if y == minY && m == minM && d == minD {
-				result = append(result, cctv)
+				result = append(result, info)
 			}
 		}
 	}
 	return
 }
 
-func ListAllImages(root string) (list []*ImageInfo) {
-	list = []*ImageInfo{}
+func ListAllImages(root string) (list []common.ICommonDeleter) {
+	list = []common.ICommonDeleter{}
 
 	if _, err := os.Stat(root); err != nil && os.IsNotExist(err) {
 		log.Warnf("%s directory does not exist : ", root)
 		return
 	}
 
-	matches, err := filepath.Glob(filepath.Join(root, "*.jpg"))
+	// 1. UTC 폴더/파일이름 포맷,  vods 와 동일한 폴더구조
+	matches, err := filepath.Glob(filepath.Join(root, "UTC", "*-0-0"))
+	if err == nil {
+		for _, e := range matches {
+			if !common.IsDir(e) {
+				continue
+			}
+			vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e), true)
+			vodInfo.FillTree()
+
+			list = append(list, vodInfo)
+		}
+	}
+
+	// 이전 포맷. jpg 가 /Images  폴더내에 생성되어 전부 있음
+	matches, err = filepath.Glob(filepath.Join(root, "*.jpg"))
 	if err != nil {
 		log.Error(err)
 		return

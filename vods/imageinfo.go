@@ -15,10 +15,14 @@ type ImageInfo struct {
 	modifiedForSorting bool
 }
 
+func (p *ImageInfo) Id() int {
+	return 0
+}
+
 type imageItem struct {
-	filename string
-	modTime  time.Time
-	y, m, d  int
+	filename   string
+	modTimeUTC time.Time
+	y, m, d    int
 }
 
 func NewImageInfo(root string) *ImageInfo {
@@ -42,7 +46,7 @@ func (p *ImageInfo) GetOldestDay() (found bool, year int, month int, day int) {
 
 	p.SortByDateDesc()
 
-	oldestTime := p.list[len(p.list)-1].modTime
+	oldestTime := p.list[len(p.list)-1].modTimeUTC
 	found = true
 	year = oldestTime.Year()
 	month = int(oldestTime.Month())
@@ -57,8 +61,8 @@ func (p *ImageInfo) GetOldestDateUTC() (found bool, dateUTC time.Time) {
 
 	p.SortByDateDesc()
 	found = true
-	oldestTime := p.list[len(p.list)-1].modTime
-	return found, oldestTime.UTC()
+	oldestTime := p.list[len(p.list)-1].modTimeUTC
+	return true, oldestTime
 }
 
 func (p *ImageInfo) DeleteOldestDay(deleteLocalDir bool) {
@@ -88,12 +92,13 @@ func (p *ImageInfo) DeleteOldestDay(deleteLocalDir bool) {
 }
 
 func (p *ImageInfo) add(filename string, modTime time.Time) {
+	modTime = modTime.UTC()
 	p.list = append(p.list, imageItem{
-		filename: filename,
-		modTime:  modTime,
-		y:        modTime.Year(),
-		m:        int(modTime.Month()),
-		d:        modTime.Day(),
+		filename:   filename,
+		modTimeUTC: modTime,
+		y:          modTime.Year(),
+		m:          int(modTime.Month()),
+		d:          modTime.Day(),
 	})
 	p.modifiedForSorting = true
 }
@@ -101,7 +106,7 @@ func (p *ImageInfo) add(filename string, modTime time.Time) {
 func (p *ImageInfo) SortByDateDesc() {
 	if p.modifiedForSorting {
 		sort.Slice(p.list, func(i, j int) bool {
-			return p.list[i].modTime.After(p.list[j].modTime)
+			return p.list[i].modTimeUTC.After(p.list[j].modTimeUTC)
 		})
 		p.modifiedForSorting = false
 	}

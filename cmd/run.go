@@ -267,40 +267,20 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 	freePercent := viper.GetInt("FREE_PERCENT")
 	dryRun := viper.GetBool("DRY_RUN")
 
-	var allVodList []*vods.VodInfo = nil
-	var allImageList []*vods.ImageInfo = nil
+	var allVodList []common.ICommonDeleter = nil
 
 	for _, info := range pathInfos {
 		switch info.Type {
 		case PathTypeVOD:
 			allVodList = vods.ListAllVODs(info.Path)
 		case PathTypeImage:
-			allImageList = vods.ListAllImages(info.Path)
+			allImageList := vods.ListAllImages(info.Path)
+			allVodList = append(allVodList, allImageList...)
 		}
 	}
 
 	// 1. retentionDays 보다 오래된것 제거
-	nowUTC := time.Now().UTC()
-	for _, vodInfo := range allVodList {
-		for {
-			found, dateUTC := vodInfo.GetOldestDateUTC()
-			if found && dateUTC.Before(nowUTC.Add(-time.Hour*24*time.Duration(retentionDays))) {
-				vodInfo.DeleteOldestDay(!dryRun)
-			} else {
-				break
-			}
-		}
-	}
-	for _, imageInfo := range allImageList {
-		for {
-			found, dateUTC := imageInfo.GetOldestDateUTC()
-			if found && dateUTC.Before(nowUTC.Add(-time.Hour*24*time.Duration(retentionDays))) {
-				imageInfo.DeleteOldestDay(!dryRun)
-			} else {
-				break
-			}
-		}
-	}
+	deleteOlderThan(allVodList, retentionDays, dryRun)
 
 	// 2. disk 용량 기준 정리
 	usage, err := disk.Usage(partition)
@@ -312,42 +292,15 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 
 	for usage.UsedPercent+float64(freePercent) >= 100 {
 
-		var oldVodInfos []*vods.VodInfo = nil
-		var oldImageInfos []*vods.ImageInfo = nil
-
-		for _, info := range pathInfos {
-			switch info.Type {
-			case PathTypeVOD:
-				oldVodInfos = vods.ListOldestCCTV(allVodList)
-			case PathTypeImage:
-				oldImageInfos = allImageList
-			}
-		}
+		var oldVodInfos = vods.FilterOldestDay(allVodList)
 
 		var foundVod bool
-		var yVod, mVod, dVod int
 		if len(oldVodInfos) > 0 {
-			foundVod, yVod, mVod, dVod = oldVodInfos[0].GetOldestDay()
+			foundVod, _, _, _ = oldVodInfos[0].GetOldestDay()
 		}
 
-		var foundImage bool
-		var yImage, mImage, dImage int
-		if len(oldImageInfos) > 0 {
-			foundImage, yImage, mImage, dImage = oldImageInfos[0].GetOldestDay()
-		}
-
-		if foundVod && foundImage {
-			if yVod < yImage ||
-				yVod <= yImage && mVod < mImage ||
-				yVod <= yImage && mVod <= mImage || dVod < dImage {
-				oldVodInfos[0].DeleteOldestDay(!dryRun)
-			} else {
-				oldImageInfos[0].DeleteOldestDay(!dryRun)
-			}
-		} else if foundVod {
+		if foundVod {
 			oldVodInfos[0].DeleteOldestDay(!dryRun)
-		} else if foundImage {
-			oldImageInfos[0].DeleteOldestDay(!dryRun)
 		} else {
 			log.Warnf("Could not free up disk [%s], /vods 또는 /images 에 지울 파일은 없으나 공간은 부족함. 디스크 확인 요망", partition)
 			break
@@ -357,6 +310,22 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 		usage, err = disk.Usage(partition)
 		if err != nil {
 			log.Fatal(err)
+		}
+	}
+}
+
+func deleteOlderThan(allVodList []common.ICommonDeleter, retentionDays int, dryRun bool) {
+	nowUTC := time.Now().UTC()
+	retentionDate := nowUTC.Add(-time.Hour * 24 * time.Duration(retentionDays))
+
+	for _, vodInfo := range allVodList {
+		for {
+			found, dateUTC := vodInfo.GetOldestDateUTC()
+			if found && dateUTC.Before(retentionDate) {
+				vodInfo.DeleteOldestDay(!dryRun)
+			} else {
+				break
+			}
 		}
 	}
 }
