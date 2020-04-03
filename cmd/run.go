@@ -280,7 +280,9 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 	}
 
 	// 1. retentionDays 보다 오래된것 제거
-	vods.DeleteOlderThan(allVodList, retentionDays, dryRun)
+	if retentionDays >= 0 {
+		vods.DeleteOlderThan(allVodList, retentionDays, dryRun)
+	}
 
 	// 2. disk 용량 기준 정리
 	usage, err := disk.Usage(partition)
