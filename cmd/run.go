@@ -280,7 +280,7 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 	}
 
 	// 1. retentionDays 보다 오래된것 제거
-	deleteOlderThan(allVodList, retentionDays, dryRun)
+	vods.DeleteOlderThan(allVodList, retentionDays, dryRun)
 
 	// 2. disk 용량 기준 정리
 	usage, err := disk.Usage(partition)
@@ -310,22 +310,6 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 		usage, err = disk.Usage(partition)
 		if err != nil {
 			log.Fatal(err)
-		}
-	}
-}
-
-func deleteOlderThan(allVodList []vods.ICommonDeleter, retentionDays int, dryRun bool) {
-	nowUTC := time.Now().UTC()
-	retentionDate := nowUTC.Add(-time.Hour * 24 * time.Duration(retentionDays))
-
-	for _, vodInfo := range allVodList {
-		for {
-			found, dateUTC := vodInfo.GetOldestDateUTC()
-			if found && dateUTC.Before(retentionDate) {
-				vodInfo.DeleteOldestDay(!dryRun)
-			} else {
-				break
-			}
 		}
 	}
 }

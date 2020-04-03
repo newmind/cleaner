@@ -231,3 +231,66 @@ LOOP:
 		log.Warnln("DeleteOldestDay : Not found")
 	}
 }
+
+func (p *VodInfo) add(year int, month int, day int) {
+	var (
+		yP *Year
+		mP *Month
+		dP *Day
+	)
+
+	for _, y := range p.years {
+		if y.y == year {
+			yP = y
+			break
+		}
+	}
+	if yP == nil {
+		yP = &Year{
+			y:      year,
+			months: []*Month{},
+		}
+	}
+
+	for _, m := range yP.months {
+		if m.m == month {
+			mP = m
+			break
+		}
+	}
+	if mP == nil {
+		mP = &Month{
+			m:    month,
+			days: []*Day{},
+		}
+	}
+
+	for _, d := range mP.days {
+		if d.d == day {
+			dP = d
+			break
+		}
+	}
+	if dP == nil {
+		dP = &Day{
+			d:     day,
+			hours: nil,
+		}
+	}
+
+	//
+	mP.days = append(mP.days, dP)
+	sort.Slice(mP.days, func(i, j int) bool {
+		return mP.days[i].d < mP.days[j].d
+	})
+
+	yP.months = append(yP.months, mP)
+	sort.Slice(yP.months, func(i, j int) bool {
+		return yP.months[i].m < yP.months[j].m
+	})
+
+	p.years = append(p.years, yP)
+	sort.Slice(p.years, func(i, j int) bool {
+		return p.years[i].y < p.years[j].y
+	})
+}

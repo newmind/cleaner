@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"gitlab.markany.com/argos/cleaner/common"
@@ -116,4 +117,20 @@ func ListAllImages(root string) (list []ICommonDeleter) {
 	}
 
 	return
+}
+
+func DeleteOlderThan(allVodList []ICommonDeleter, retentionDays int, dryRun bool) {
+	nowUTC := time.Now().UTC()
+	retentionDate := nowUTC.Add(-time.Hour * 24 * time.Duration(retentionDays))
+
+	for _, vodInfo := range allVodList {
+		for {
+			found, dateUTC := vodInfo.GetOldestDateUTC()
+			if found && dateUTC.Before(retentionDate) {
+				vodInfo.DeleteOldestDay(!dryRun)
+			} else {
+				break
+			}
+		}
+	}
 }
