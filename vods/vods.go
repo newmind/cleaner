@@ -82,20 +82,20 @@ func ListAllImages(root string) (list []ICommonDeleter) {
 	}
 
 	// 1. UTC 폴더/파일이름 포맷,  vods 와 동일한 폴더구조
-	matches, err := filepath.Glob(filepath.Join(root, "UTC", "*-0-0"))
+	matches, err := filepath.Glob(filepath.Join(root, "*"))
 	if err == nil {
 		for _, e := range matches {
 			if !common.IsDir(e) {
 				continue
 			}
-			vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e), true)
+			vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e), false)
 			vodInfo.FillTree()
 
 			list = append(list, vodInfo)
 		}
 	}
 
-	// 이전 포맷. jpg 가 /Images  폴더내에 생성되어 전부 있음
+	// 2. 이전 포맷 데이터. jpg 파일들이 /Images 폴더 한군데에 전부 있음
 	matches, err = filepath.Glob(filepath.Join(root, "*.jpg"))
 	if err != nil {
 		log.Error(err)

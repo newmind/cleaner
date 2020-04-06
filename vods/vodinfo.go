@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -15,15 +14,21 @@ import (
 type Day struct {
 	d     int
 	hours []bool
+
+	dirname string
 }
 type Month struct {
 	m    int
 	days []*Day
+
+	dirname string
 }
 
 type Year struct {
 	y      int
 	months []*Month
+
+	dirname string
 }
 
 func (y *Year) deleteMonthByIndex(monthIndex int) {
@@ -85,8 +90,9 @@ func (p *VodInfo) fillYear() {
 		year := common.Atoi(filepath.Base(e), -1)
 		if year != -1 {
 			p.years = append(p.years, &Year{
-				y:      year,
-				months: []*Month{},
+				y:       year,
+				months:  []*Month{},
+				dirname: filepath.Base(e),
 			})
 		}
 	}
@@ -99,7 +105,7 @@ func (p *VodInfo) fillYear() {
 func (p *VodInfo) fillMonth() {
 	for _, year := range p.years {
 
-		pattern := filepath.Join(p.path, strconv.Itoa(year.y), "*")
+		pattern := filepath.Join(p.path, year.dirname, "*")
 
 		matches, err := filepath.Glob(pattern)
 		if err != nil {
@@ -114,8 +120,9 @@ func (p *VodInfo) fillMonth() {
 			month := common.Atoi(filepath.Base(e), -1)
 			if month != -1 {
 				year.months = append(year.months, &Month{
-					m:    month,
-					days: []*Day{},
+					m:       month,
+					days:    []*Day{},
+					dirname: filepath.Base(e),
 				})
 			}
 		}
@@ -130,8 +137,7 @@ func (p *VodInfo) fillDay() {
 	for _, year := range p.years {
 		for _, month := range year.months {
 
-			pattern := filepath.Join(p.path,
-				strconv.Itoa(year.y), strconv.Itoa(month.m), "*")
+			pattern := filepath.Join(p.path, year.dirname, month.dirname, "*")
 
 			matches, err := filepath.Glob(pattern)
 			if err != nil {
@@ -146,8 +152,9 @@ func (p *VodInfo) fillDay() {
 				day := common.Atoi(filepath.Base(e), -1)
 				if day != -1 {
 					month.days = append(month.days, &Day{
-						d:     day,
-						hours: nil,
+						d:       day,
+						hours:   nil,
+						dirname: filepath.Base(e),
 					})
 				}
 			}
@@ -186,27 +193,28 @@ func (p *VodInfo) GetOldestDateUTC() (found bool, dateUTC time.Time) {
 func (p *VodInfo) DeleteOldestDay(deleteLocalDir bool) {
 	var found bool
 	var yIdx, mIdx, dIdx int
-	var y, m, d int
 
 LOOP:
 	for i, yy := range p.years {
 		for j, mm := range yy.months {
-			for k, dd := range mm.days {
+			for k, _ := range mm.days {
 				found = true
 				yIdx, mIdx, dIdx = i, j, k
-				y, m, d = yy.y, mm.m, dd.d
 				break LOOP
 			}
 		}
 	}
 
 	if found {
-		log.Debugf("Delete dir [%s] %d/%d/%d %s(utc=%v)", p.id, y, m, d, p.path, p.utc)
 		// delete day
-		month := p.years[yIdx].months[mIdx]
+		year := p.years[yIdx]
+		month := year.months[mIdx]
+		day := month.days[dIdx]
+		log.Debugf("Delete dir [%s] %d/%d/%d %s(utc=%v)", p.id, year.dirname, month.dirname, day.dirname, p.path, p.utc)
+
 		month.deleteDayByIndex(dIdx)
 		if deleteLocalDir {
-			toDelete := filepath.Join(p.path, strconv.Itoa(y), strconv.Itoa(m), strconv.Itoa(d))
+			toDelete := filepath.Join(p.path, year.dirname, month.dirname, day.dirname)
 			// Windows 에서는 삭제가 바로 안되는 문제 있음.
 			// https://github.com/golang/go/issues/20841
 			// 그래서 RemoveAll 이후 상위 디렉토리를 os.Remove 로 삭제시 실패남
@@ -217,10 +225,9 @@ LOOP:
 		}
 
 		if month.isEmpty() {
-			year := p.years[yIdx]
 			year.deleteMonthByIndex(mIdx)
 			if deleteLocalDir {
-				toDelete := filepath.Join(p.path, strconv.Itoa(y), strconv.Itoa(m))
+				toDelete := filepath.Join(p.path, year.dirname, month.dirname)
 				err := os.Remove(toDelete)
 				if err != nil {
 					log.Error(err)

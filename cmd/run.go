@@ -72,8 +72,8 @@ func init() {
 	runCmd.Flags().BoolVar(&debug, "debug", true, "use debug logging mode")
 	runCmd.Flags().StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
 	runCmd.Flags().StringVar(&serverPort, "server_port", "8889", "http port")
-	runCmd.Flags().StringVar(&vodPath, "vod_path", "/vods", "vod path (required)")
-	runCmd.Flags().StringVar(&imagePath, "image_path", "/images", "image path (required)")
+	runCmd.Flags().StringVar(&vodPath, "vod_path", "", "vod path (required)")
+	runCmd.Flags().StringVar(&imagePath, "image_path", "", "image path (required)")
 }
 
 func loadConfig() {
