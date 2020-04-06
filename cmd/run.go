@@ -12,15 +12,14 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
-	"gitlab.markany.com/argos/cleaner/common"
-	"gitlab.markany.com/argos/cleaner/diskinfo"
-	"gitlab.markany.com/argos/cleaner/service"
-	"gitlab.markany.com/argos/cleaner/vods"
-
 	"github.com/shirou/gopsutil/disk"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gitlab.markany.com/argos/cleaner/common"
+	"gitlab.markany.com/argos/cleaner/diskinfo"
+	"gitlab.markany.com/argos/cleaner/service"
+	"gitlab.markany.com/argos/cleaner/vods"
 )
 
 var appName = "cleaner"
@@ -72,8 +71,8 @@ func init() {
 	runCmd.Flags().BoolVar(&debug, "debug", true, "use debug logging mode")
 	runCmd.Flags().StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
 	runCmd.Flags().StringVar(&serverPort, "server_port", "8889", "http port")
-	runCmd.Flags().StringVar(&vodPath, "vod_path", "", "vod path (required)")
-	runCmd.Flags().StringVar(&imagePath, "image_path", "", "image path (required)")
+	runCmd.Flags().StringVar(&vodPath, "vod_path", "/vods", "vod path (required)")
+	runCmd.Flags().StringVar(&imagePath, "image_path", "/images", "image path (required)")
 }
 
 func loadConfig() {
@@ -174,6 +173,19 @@ func run() {
 	loadConfig()
 	initLogger()
 
+	useExternalCleaner := false
+	for _, e := range os.Environ() {
+		pair := strings.SplitN(e, "=", 2)
+		if pair[0] == "USE_EXTERNAL_CLEANER" &&
+			strings.ToLower(pair[1]) == "true" {
+			useExternalCleaner = true
+		}
+	}
+	if !useExternalCleaner {
+		log.Info("Exit. USE_EXTERNAL_CLEANER == false")
+		return
+	}
+
 	if viper.GetString("CPUPROFILE") != "" {
 		f, err := os.Create(viper.GetString("CPUPROFILE"))
 		if err != nil {
@@ -186,15 +198,6 @@ func run() {
 	}
 
 	log.Infof("Starting %v (debug=%v, dryRun=%v)...", appName, viper.GetBool("DEBUG"), viper.GetBool("DRY_RUN"))
-
-	log.Info("All partitions : ")
-	partitions, err := diskinfo.GetAllPartitions()
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, p := range partitions {
-		log.Info(p.String())
-	}
 
 	// map[partition] : []string{path}
 	diskMap := getDiskPathMap(
@@ -290,7 +293,7 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 		log.Error(err)
 		return
 	}
-	log.Debug(usage)
+	log.Info(usage)
 
 	for usage.UsedPercent+float64(freePercent) >= 100 {
 		if !vods.DeleteOldest(allVodList, dryRun) {

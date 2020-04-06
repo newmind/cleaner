@@ -194,6 +194,11 @@ func (p *VodInfo) DeleteOldestDay(deleteLocalDir bool) {
 	var found bool
 	var yIdx, mIdx, dIdx int
 
+	log := log.WithFields(log.Fields{
+		"id":   p.id,
+		"root": p.path,
+	})
+
 LOOP:
 	for i, yy := range p.years {
 		for j, mm := range yy.months {
@@ -210,7 +215,11 @@ LOOP:
 		year := p.years[yIdx]
 		month := year.months[mIdx]
 		day := month.days[dIdx]
-		log.Debugf("Delete dir [%s] %v/%v/%v %s(utc=%v)", p.id, year.dirname, month.dirname, day.dirname, p.path, p.utc)
+
+		log.WithField(
+			"dir",
+			filepath.Join(p.id, (map[bool]string{true: "UTC", false: ""})[p.utc], year.dirname, month.dirname, day.dirname)).
+			Debugf("Delete dir %s %v/%v/%v (utc=%v)", p.path, year.dirname, month.dirname, day.dirname, p.utc)
 
 		month.deleteDayByIndex(dIdx)
 		if deleteLocalDir {

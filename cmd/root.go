@@ -73,6 +73,7 @@ func initConfig() {
 		viper.SetConfigName(".cleaner")
 	}
 
+	viper.SetEnvPrefix("CLEANER")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
