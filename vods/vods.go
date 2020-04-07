@@ -88,7 +88,7 @@ func ListAllImages(root string) (list []ICommonDeleter) {
 			if !common.IsDir(e) {
 				continue
 			}
-			vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e), false)
+			vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e), true)
 			vodInfo.FillTree()
 
 			list = append(list, vodInfo)

@@ -216,10 +216,7 @@ LOOP:
 		month := year.months[mIdx]
 		day := month.days[dIdx]
 
-		log.WithField(
-			"dir",
-			filepath.Join(p.id, (map[bool]string{true: "UTC", false: ""})[p.utc], year.dirname, month.dirname, day.dirname)).
-			Debugf("Delete dir %s %v/%v/%v (utc=%v)", p.path, year.dirname, month.dirname, day.dirname, p.utc)
+		log.Debugf("Delete dir [%s] %v/%v/%v %s(utc=%v)", p.id, year.dirname, month.dirname, day.dirname, p.path, p.utc)
 
 		month.deleteDayByIndex(dIdx)
 		if deleteLocalDir {
