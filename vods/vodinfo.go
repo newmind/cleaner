@@ -216,7 +216,7 @@ LOOP:
 		month := year.months[mIdx]
 		day := month.days[dIdx]
 
-		log.Debugf("Delete dir [%s] %v/%v/%v %s(utc=%v)", p.id, year.dirname, month.dirname, day.dirname, p.path, p.utc)
+		log.Debugf("Deleted dir [%s] %v/%v/%v %s(utc=%v)", p.id, year.dirname, month.dirname, day.dirname, p.path, p.utc)
 
 		month.deleteDayByIndex(dIdx)
 		if deleteLocalDir {
