@@ -7,7 +7,7 @@ import (
 )
 
 func TestVodInfo_DeleteOldestDay(t *testing.T) {
-	vodInfo := NewVodInfo("dummy", "1", false)
+	vodInfo := NewVodInfo("dummy", "1", false, "")
 
 	found, _, _, _ := vodInfo.GetOldestDay()
 	assert.False(t, found, "Check empty")

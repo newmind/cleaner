@@ -17,14 +17,16 @@ func ListAllVODs(root string) (list []ICommonDeleter) {
 		return
 	}
 
-	matches, err := filepath.Glob(filepath.Join(root, "UTC", "*-0-0"))
+	matches, err := filepath.Glob(filepath.Join(root, "*-0-0", "UTC"))
 	if err == nil {
 		for _, e := range matches {
 			if !common.IsDir(e) {
 				continue
 			}
-			vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e), true)
+			id := filepath.Base(filepath.Dir(e))
+			vodInfo := NewVodInfo(filepath.Dir(e), id, true, e)
 			vodInfo.FillTree()
+			//log.Debugf("%#v", vodInfo)
 
 			list = append(list, vodInfo)
 		}
@@ -36,8 +38,9 @@ func ListAllVODs(root string) (list []ICommonDeleter) {
 			if !common.IsDir(e) {
 				continue
 			}
-			vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e), false)
+			vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e), false, e)
 			vodInfo.FillTree()
+			//log.Debugf("%#v", vodInfo)
 
 			list = append(list, vodInfo)
 		}
@@ -88,8 +91,9 @@ func ListAllImages(root string) (list []ICommonDeleter) {
 			if !common.IsDir(e) {
 				continue
 			}
-			vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e), true)
+			vodInfo := NewVodInfo(filepath.Dir(e), filepath.Base(e), true, e)
 			vodInfo.FillTree()
+			//log.Debugf("%#v", vodInfo)
 
 			list = append(list, vodInfo)
 		}
@@ -138,10 +142,12 @@ func DeleteOlderThan(allVodList []ICommonDeleter, retentionDays int, dryRun bool
 
 func DeleteOldest(allVodList []ICommonDeleter, dryRun bool) (deleted bool) {
 	var oldInfos = FilterOldestDay(allVodList)
+	//log.Debug("oldInfos len = ", len(oldInfos))
 
-	var found bool
+	//var found bool
 	if len(oldInfos) > 0 {
-		found, _, _, _ = oldInfos[0].GetOldestDay()
+		found, y, m, d := oldInfos[0].GetOldestDay()
+		_, _, _ = y, m, d
 		if found {
 			oldInfos[0].DeleteOldestDay(!dryRun)
 			return true

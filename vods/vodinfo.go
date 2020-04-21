@@ -60,9 +60,9 @@ func (p *VodInfo) Id() int {
 	return p.intId
 }
 
-func NewVodInfo(root string, id string, isUTC bool) *VodInfo {
+func NewVodInfo(root string, id string, isUTC bool, path string) *VodInfo {
 	return &VodInfo{
-		path:  filepath.Join(root, id),
+		path:  path,
 		id:    id,
 		intId: common.Atoi(strings.Split(id, "-")[0], 0),
 		years: []*Year{},

@@ -91,7 +91,7 @@ func GetMountpoint(dir string) string {
 	}
 	for _, p := range pp {
 		if strings.HasPrefix(dir, p.Mountpoint) {
-			return p.Mountpoint
+			return p.Device
 		}
 	}
 	return ""

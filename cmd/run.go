@@ -199,6 +199,15 @@ func run() {
 
 	log.Infof("Starting %v (debug=%v, dryRun=%v)...", appName, viper.GetBool("DEBUG"), viper.GetBool("DRY_RUN"))
 
+	log.Info("All partitions : ")
+	partitions, err := diskinfo.GetAllPartitions()
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, p := range partitions {
+		log.Info(p.String())
+	}
+
 	// map[partition] : []string{path}
 	diskMap := getDiskPathMap(
 		PathInfo{Path: vodPath, Type: PathTypeVOD},
@@ -207,6 +216,7 @@ func run() {
 	cronCleaner := cron.New(cron.WithSeconds())
 
 	for partition, pathInfos := range diskMap {
+		//device := partition
 		log.Infof("Scheduled to delete %s %s", partition, pathInfos)
 		isRunning := &common.TAtomBool{}
 		p := partition  // capture
@@ -275,9 +285,12 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 	for _, info := range pathInfos {
 		switch info.Type {
 		case PathTypeVOD:
-			allVodList = vods.ListAllVODs(info.Path)
+			vodList := vods.ListAllVODs(info.Path)
+			//log.Debug("vodlist len = ", len(vodList))
+			allVodList = append(allVodList, vodList...)
 		case PathTypeImage:
 			allImageList := vods.ListAllImages(info.Path)
+			//log.Debug("imagelist len = ", len(allImageList))
 			allVodList = append(allVodList, allImageList...)
 		}
 	}
@@ -289,12 +302,17 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 	}
 
 	// 2. disk 용량 기준 정리
+
+	// ** partition 정보가 리눅스/도커 내에서 잘못나오는 경우가 있으므로
+	// ** 폴더 이름으로 usage 얻어온다
+	partition = pathInfos[0].Path
+
 	usage, err := disk.Usage(partition)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	// log.Info(usage)
+	log.Info(usage)
 
 	for usage.UsedPercent+float64(freePercent) >= 100 {
 		if !vods.DeleteOldest(allVodList, dryRun) {
