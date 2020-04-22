@@ -147,6 +147,7 @@ func DeleteOldest(allVodList []ICommonDeleter, dryRun bool) (deleted bool) {
 	//var found bool
 	if len(oldInfos) > 0 {
 		found, y, m, d := oldInfos[0].GetOldestDay()
+		//log.Debugf("found=%v %v/%v/%v", found, y, m, d)
 		_, _, _ = y, m, d
 		if found {
 			oldInfos[0].DeleteOldestDay(!dryRun)

@@ -312,9 +312,9 @@ func freeUpDisk(partition string, pathInfos []PathInfo, isRunning *common.TAtomB
 		log.Error(err)
 		return
 	}
-	log.Info(usage)
 
 	for usage.UsedPercent+float64(freePercent) >= 100 {
+		log.Info(usage)
 		if !vods.DeleteOldest(allVodList, dryRun) {
 			log.Warnf("Could not free up disk [%s], /vods 또는 /images 에 지울 파일은 없으나 공간은 부족함. 디스크 확인 요망", partition)
 			break
