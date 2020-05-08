@@ -14,19 +14,21 @@
       "args": []
     },
     {
-      "name": "main",
+      "name": "Launch run",
       "type": "go",
       "request": "launch",
       "mode": "auto",
       "program": "${workspaceFolder}",
-      "cwd": "${workspaceFolder}",
-      "env": {},
+      "env": {
+        "USE_EXTERNAL_CLEANER": "true",
+      },
       "args": [
         "run",
         "--debug=true",
         "--dry_run=true",
         // "--paths=/Volumes/RAMDisk",
-        "--iamge_path=./test/images",
+        // "--iamge_path=./test/images",
+        "--vod_path=/vods",
       ]
     }
   ]

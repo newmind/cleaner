@@ -19,4 +19,9 @@ func main() {
 
 	list := vods.ListAllVODs(args[0])
 	fmt.Printf("Total %d CCTVs", len(list))
+	for _, deleter := range list {
+		if found, time := deleter.GetOldestDateUTC(); found {
+			fmt.Printf("%s oldest date=%s\n", deleter, time)
+		}
+	}
 }
