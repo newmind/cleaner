@@ -225,6 +225,8 @@ func run() {
 			freeUpDisk(p, pi, isRunning)
 		}
 
+		go freeUpDisk(p, pi, isRunning)
+
 		_, err := cronCleaner.AddFunc(fmt.Sprintf("@every %s", viper.GetString("INTERVAL")), deleter)
 		if err != nil {
 			log.Fatal(err)
