@@ -1,0 +1,23 @@
+package meta
+
+var VERSION_TAG string = "@VERSION_TAG@"
+var VERSION_SHORT string = "@VERSION_SHORT@"
+var VERSION_LONG string = "@VERSION_LONG@"
+var VERSION_BRANCH string = "@VERSION_BRANCH@"
+var VERSION_TAG_WITH_BRANCH string = "@VERSION_TAG_WITH_BRANCH@"
+var VERSION_SHORT_WITH_BRANCH string = "@VERSION_SHORT_WITH_BRANCH@"
+var VERSION_LONG_WITH_BRANCH string = "@VERSION_LONG_WITH_BRANCH@"
+
+type Version struct {
+	Version string
+	Branch  string
+	Hash    string
+	OneLine string
+}
+
+var BuildVersion = &Version{
+	Version: "@VERSION_SHORT@",
+	Branch:  "@VERSION_BRANCH@",
+	Hash:    "@VERSION_HASH@",
+	OneLine: "@VERSION_LONG_WITH_BRANCH@",
+}
